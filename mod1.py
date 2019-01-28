@@ -9,7 +9,7 @@ import FinanceDataReader as fdr
 import pandas as pd
 import datetime as dt
 from urllib.request import urlopen  
-import bs4
+from bs4 import BeautifulSoup
 
 def date_format(d):
     d = str(d).replace('-', '.')
@@ -66,69 +66,68 @@ class excel:
             print(df)
 
         
-    def kpi_200(self,index_cd, start_date='', end_date= '', page_n=1, last_page=0):
-        
-        historical_prices = dict()
-        index_cd = 'KPI200'
-        page_n = 1
-        naver_index = 'http://finance.naver.com/sise/sise_index_day.nhn?code=' + index_cd + '&page=' + str(page_n)
-        
-        self.start_date = start_date
-        self.end_date = end_date
-        
-        if start_date:  # start_date가 있으면
-            start_date = date_format(start_date)   # date 포맷으로 변환
-        else:    # 없으면
-            start_date = dt.date.today()   # 오늘 날짜를 지정
-        if end_date:   
-            end_date = date_format(end_date)   
-        else:   
-            end_date = dt.date.today()  
-        
-        
-        naver_index = 'http://finance.naver.com/sise/sise_index_day.nhn?code=' + index_cd + '&page=' + str(page_n)
-    
-        source = urlopen(naver_index).read()   # 지정한 페이지에서 코드 읽기
-        source = bs4.BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-    
-        dates = source.find_all('td', class_='date')   # <td class="date">태그에서 날짜 수집   
-        prices = source.find_all('td', class_='number_1')   # <td class="number_1">태그에서 지수 수집
-    
-        for n in range(len(dates)):
-    
-            if dates[n].text.split('.')[0].isdigit():
-            
-                # 날짜 처리
-                this_date = dates[n].text
-                this_date= date_format(this_date)
-            
-                if this_date <= end_date and this_date >= start_date:   
-                # start_date와 end_date 사이에서 데이터 저장
-                    # 종가 처리
-                    this_close = prices[n*4].text   # prices 중 종가지수인 0,4,8,...번째 데이터 추출
-                    this_close = this_close.replace(',', '')
-                    this_close = float(this_close)
 
-                    # 딕셔너리에 저장
-                    historical_prices[this_date] = this_close
+    def get_money_trend(self):
+    
+        path = 'd:\\money_trend.xlsx'
+
+        url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='    
+        Data = pd.DataFrame(columns = ['고객예탁금', '신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드'])
+        date_list = []
+    
+        # 값을 받을 사전
+        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형 펀드': [],'혼합형 펀드': [],'채권형 펀드': []}
+
+        # dictionary key 인덱싱을 위한 리스트
+        name_list = ['고객예탁금','신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드']
+
+        # count mask
+        mask = [0,1,3,5,7,9]
+    
+        for i in range(1,300):
+            source = urlopen(url+ str(i)).read()
+            source = BeautifulSoup(source,'lxml')
+
+            tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
+            trs = tbody.find_all('tr')
+            for tr in trs:
+                tds = tr.find_all('td')
+                count = 0
+    
+                for td in tds:
+                    # 변화량 제외하고 잔고량만 가져오기
+                    if not td.text.strip() == 0:
+                        if len(td.text.strip()) >= 4:
+            
+                            if count == 0:
+                                date_ = td.text.strip().replace('.','-')
+                        
+                                if not date_ in date_list:
+                                    date_list.append(date_)
+                        
+                                #마지막 페이지인 경우
+                                else:
+                                    print(str(i-1) + '번째 페이지에서 크롤링 종료')
+                                
+                                    df = pd.DataFrame(dictionary,index = date_list)
+                                    df = df.sort_index()
+                                    df.to_excel(path, encoding='utf-8')
+                                
+                                    return df
+
+                            elif count in mask:
+                                temp = int((count-1)/2)
+                                dictionary[name_list[temp]].append(td.text.strip())
+        
+                        count += 1
+            
+                # 누락된 값을 발견하면 (펀드 자료에 누락된 값이 존재함)
+                if len(dictionary['고객예탁금']) != len(dictionary['주식형 펀드']):
+                    print(str(i)+ '번째 페이지에서 누락된 값 발생')
+                    print('누락된 데이터를 제거합니다')
+                    
+                    date_list.pop(-1)
+                    dictionary['고객예탁금'].pop(-1)
+                    dictionary['신용잔고'].pop(-1)
                 
-                elif this_date < start_date:   
-                    # start_date 이전이면 함수 종료
-                    return historical_prices              
-            
-        # 페이지 네비게이션
-        if last_page == 0:
-            last_page = source.find('td', class_='pgRR').find('a')['href']
-            # 마지막페이지 주소 추출
-            last_page = last_page.split('&')[1]   # & 뒤의 page=506 부분 추출
-            last_page = last_page.split('=')[1]   # = 뒤의 페이지번호만 추출
-            last_page = int(last_page)   # 숫자형 변수로 변환
-        
-        #다음 페이지 호출
-        if page_n < last_page:   
-               page_n = page_n + 1   
-               self.(index_cd, start_date='', end_date= '', page_n=1, last_page=0)  
-        
-        return historical_prices  
-        print(historical_prices)
-
+            print(str(i) + '번째 페이지 크롤링 완료')
