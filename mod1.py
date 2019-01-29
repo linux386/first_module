@@ -7,9 +7,9 @@ This is a temporary script file.
 
 import FinanceDataReader as fdr
 import pandas as pd
-import datetime as dt
-from urllib.request import urlopen  
 from bs4 import BeautifulSoup
+import datetime as dt
+from urllib.request import urlopen
 
 def date_format(d):
     d = str(d).replace('-', '.')
@@ -21,7 +21,6 @@ def date_format(d):
     this_date= dt.date(yyyy, mm, dd)
     return this_date
     
-
 class excel:
     
 
@@ -66,7 +65,6 @@ class excel:
             print(df)
 
         
-
     def get_money_trend(self):
     
         path = 'd:\\money_trend.xlsx'
@@ -129,5 +127,6 @@ class excel:
                     date_list.pop(-1)
                     dictionary['고객예탁금'].pop(-1)
                     dictionary['신용잔고'].pop(-1)
-                
+               
+
             print(str(i) + '번째 페이지 크롤링 완료')
