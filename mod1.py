@@ -130,3 +130,69 @@ class excel:
                
 
             print(str(i) + '번째 페이지 크롤링 완료')
+
+    def get_money_trend_date(self,until_date='00-12-27'):
+    
+        path = 'd:\\money_trend.xlsx'
+
+        url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='    
+        Data = pd.DataFrame(columns = ['고객예탁금', '신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드'])
+        date_list = []
+    
+        # 값을 받을 사전
+        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형 펀드': [],'혼합형 펀드': [],'채권형 펀드': []}
+
+        # dictionary key 인덱싱을 위한 리스트
+        name_list = ['고객예탁금','신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드']
+
+        # count mask
+        mask = [0,1,3,5,7,9]
+    
+        for i in range(1,300):
+            source = urlopen(url+ str(i)).read()
+            source = BeautifulSoup(source,'lxml')
+
+            tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
+            trs = tbody.find_all('tr')
+            for tr in trs:
+                tds = tr.find_all('td')
+                count = 0
+    
+                for td in tds:
+                    # 변화량 제외하고 잔고량만 가져오기
+                    if not td.text.strip() == 0:
+                        if len(td.text.strip()) >= 4:
+            
+                            if count == 0:
+                                date_ = td.text.strip().replace('.','-')
+                        
+                                if not date_ in date_list :
+                                    date_list.append(date_)
+                        
+                                #마지막 페이지인 경우
+                                    if date_ == until_date or i > 207:
+                                        print(str(i-1) + '번째 페이지에서 크롤링 종료')
+                                        date_list.pop(-1)
+                                        df = pd.DataFrame(dictionary,index = date_list)
+                                        df = df.sort_index()
+                                        df.to_excel(path, encoding='utf-8')
+                                
+                                        return df
+
+                            elif count in mask:
+                                temp = int((count-1)/2)
+                                dictionary[name_list[temp]].append(td.text.strip())
+        
+                        count += 1
+            
+                # 누락된 값을 발견하면 (펀드 자료에 누락된 값이 존재함)
+                if len(dictionary['고객예탁금']) != len(dictionary['주식형 펀드']):
+                    print(str(i)+ '번째 페이지에서 누락된 값 발생')
+                    print('누락된 데이터를 제거합니다')
+                    
+                    date_list.pop(-1)
+                    dictionary['고객예탁금'].pop(-1)
+                    dictionary['신용잔고'].pop(-1)
+                
+            print(str(i) + '번째 페이지 크롤링 완료')
+    
