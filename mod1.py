@@ -134,6 +134,7 @@ class excel:
     def get_money_trend_date(self,until_date='00-12-27'):
     
         path = 'd:\\money_trend.xlsx'
+        print(path)
 
         url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='    
         Data = pd.DataFrame(columns = ['고객예탁금', '신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드'])
@@ -170,7 +171,7 @@ class excel:
                                     date_list.append(date_)
                         
                                 #마지막 페이지인 경우
-                                    if date_ == until_date or i > 207:
+                                    if date_ == until_date or i > 3:
                                         print(str(i-1) + '번째 페이지에서 크롤링 종료')
                                         date_list.pop(-1)
                                         df = pd.DataFrame(dictionary,index = date_list)
@@ -200,7 +201,8 @@ class excel:
     def get_kpi_200_date(self,until_date='00-12-27'):
     
         path = 'd:\\kpi_200.xlsx'
-
+        
+        url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
         Data = pd.DataFrame(columns = ['KPI200','거래량'])
         date_list = []
     
@@ -213,7 +215,7 @@ class excel:
         # count mask
         mask = [0,1,5]
     
-        for i in range(1,last+3):
+        for i in range(1,700):
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
@@ -235,7 +237,7 @@ class excel:
                                     date_list.append(date_)
                                     
                                     #마지막 페이지인 경우
-                                    if date_ == until_date or i > 5:
+                                    if date_ == until_date or i > 3:
                                         print(str(i-1) + '번째 페이지에서 크롤링 종료')
                                         date_list.pop(-1)
                                         df = pd.DataFrame(dictionary,index = date_list)
@@ -261,5 +263,6 @@ class excel:
                     dictionary['거래량'].pop(-1)
                 
             print(str(i) + '번째 페이지 크롤링 완료')
+    
     
     
