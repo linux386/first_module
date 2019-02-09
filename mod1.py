@@ -12,19 +12,58 @@ import datetime as dt
 from urllib.request import urlopen
 import sqlalchemy 
 import pymysql
-pymysql.install_as_MySQLdb() # MySQLdb와 호환 
-import MySQLdb
+import matplotlib.pyplot as plt
+from matplotlib import font_manager, rc
+font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
+rc('font', family=font_name)
+%matplotlib inline
 
 now = dt.datetime.today().strftime('%Y-%m-%d')
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
 conn = engine.connect()
 
+def stock_price_graph():
+    
+    name = input('주식이름을 입력하세요:').split()
+    date = input("날짜를 입력하세요 sample: '2019-01-10':")
+    #table= input('write table name:')
+    
+    select_query = "select DATE(Date),Close from market where Name= "
+    date_query = "Date > "
+    
+    #select_query = "select DATE(Date),Close from"+" "+table+" "+"where Name=""'"+name+"'"+"&&"+" "+date_query+"'"+date+"'"
+    
+    #print("\n")
+    tuple_name=tuple(name)
+    df1 = pd.DataFrame()
+    
+    for x in tuple_name:
+        #print(x)
+        
+        var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
+        #print(var)
+        df = pd.read_sql(var ,engine)
+        df.columns=['Date',x]
+        if df1.empty:
+            df1 = df
+        else:
+            df1 = pd.merge (df,df1,on='Date')
+    df1=df1.set_index('Date')
+    #first_date = date_format(df['Date'][0])
+    plt.figure(figsize=(12,5))
+    for i in range(len(name)):
+        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
+        #plt.plot(df1[name[1]]/df1[name[1]].loc[dt.date(2017,1,2)]*100)
+    plt.legend(loc=0)
+    plt.grid(True,color='0.7',linestyle=':',linewidth=1)   
+
 
 def excel_to_mysql(file_name):
+    file_name = input('파일이름을 입력하세요:')
         
     df=pd.read_excel('d:\\'+ file_name)
     df.index.name='Date'
-    #df.to_sql(name=file_name, con=engine, if_exists='append')
+    df.to_sql(name=file_name, con=engine, if_exists='append')
     return df
 
 
@@ -38,6 +77,9 @@ def get_stock_price_from_fdr(self, market,toward, start_date ,end_date = now):
    
     elif market=='kosdsq':
         data = pd.read_excel('d:\\kosdsq_list.xlsx')
+    
+    elif market=='market':
+        data = pd.read_excel('d:\\market_list.xlsx')
 
               
     code_list = data['종목코드'].tolist()
