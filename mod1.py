@@ -18,9 +18,51 @@ font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get
 rc('font', family=font_name)
 %matplotlib inline
 
+def date_format(d):
+    d = str(d).replace('-','.')
+    yyyy = int(d.split('.')[0])
+    mm = int(d.split('.')[1])
+    dd = int(d.split('.')[2])
+    return dt.datetime(yyyy,mm,dd)
+
 now = dt.datetime.today().strftime('%Y-%m-%d')
+yesterday = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
+
+yesterday = date_format(yesterday)
+today = date_format(now)
+
+#yesterday = '2019-02-07 00:00:00'
+#today = '2019-02-08 00:00:00'
+
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
 conn = engine.connect()
+
+def stock_select_with_Volume_Close(start=yesterday, end=today):
+    
+    var = "select * from market where Date >= '2019-02-07' && Volume >  500000"
+    df = pd.read_sql(var ,engine)
+
+    df1 = df[df['Date'] == yesterday]
+    df1 = df1[['Name','Volume','Close']]
+    df1.columns = ['Name','yester_Volume','yester_Close']
+    #display(df1)
+
+    df2 = df[df['Date'] == today]
+    df2 = df2[['Name','Volume','Close']]
+    df2.columns = ['Name','today_Volume','today_Close']
+    #display(df2)
+
+    df3 = pd.merge(df1,df2,on='Name')
+    df3['Close']=df3['today_Close']/df3['yester_Close']
+    df3['Volume']=df3['today_Volume']/df3['yester_Volume']
+    df3 = df3.sort_values(by=['Volume','Close'],ascending=False)
+    df3 = df3.reset_index(drop=True)
+    df3 = df3[:10]
+    df4 = df3.sort_values(by=['Close','Volume'],ascending=False)
+    df4 = df4.reset_index(drop=True)
+    df4 = df4[:10]
+    display(df3)
+    display(df4)
 
 def stock_price_graph():
     
