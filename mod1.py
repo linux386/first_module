@@ -18,8 +18,10 @@ from matplotlib import font_manager, rc
 font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
 rc('font', family=font_name)
 
+now = dt.datetime.today().strftime('%Y-%m-%d')
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
 conn = engine.connect()
+
 
 def stock_select_with_Volume_Close():
     
