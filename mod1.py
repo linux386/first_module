@@ -9,6 +9,7 @@ import FinanceDataReader as fdr
 import pandas as pd
 from bs4 import BeautifulSoup
 import datetime as dt
+from datetime import datetime,timedelta
 from urllib.request import urlopen
 import sqlalchemy 
 import pymysql
@@ -16,30 +17,19 @@ import matplotlib.pyplot as plt
 from matplotlib import font_manager, rc
 font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
 rc('font', family=font_name)
-%matplotlib inline
-
-def date_format(d):
-    d = str(d).replace('-','.')
-    yyyy = int(d.split('.')[0])
-    mm = int(d.split('.')[1])
-    dd = int(d.split('.')[2])
-    return dt.datetime(yyyy,mm,dd)
-
-now = dt.datetime.today().strftime('%Y-%m-%d')
-yesterday = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
-
-yesterday = date_format(yesterday)
-today = date_format(now)
-
-#yesterday = '2019-02-07 00:00:00'
-#today = '2019-02-08 00:00:00'
 
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
 conn = engine.connect()
 
-def stock_select_with_Volume_Close(start=yesterday, end=today):
+def stock_select_with_Volume_Close():
     
-    var = "select * from market where Date >= '2019-02-07' && Volume >  500000"
+    yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07 00:00:00'  ") 
+    today = input("오늘날짜를 입력하세요 : sample: '2019-02-07 00:00:00'  ")
+    
+    select_query = "select * from market where Date >="
+    volume_query = "&& Volume >  500000"
+    
+    var = select_query +"'"+yesterday+"'"+ volume_query
     df = pd.read_sql(var ,engine)
 
     df1 = df[df['Date'] == yesterday]
@@ -73,8 +63,7 @@ def stock_price_graph():
     select_query = "select DATE(Date),Close from market where Name= "
     date_query = "Date > "
     
-    #select_query = "select DATE(Date),Close from"+" "+table+" "+"where Name=""'"+name+"'"+"&&"+" "+date_query+"'"+date+"'"
-    
+
     #print("\n")
     tuple_name=tuple(name)
     df1 = pd.DataFrame()
@@ -100,7 +89,7 @@ def stock_price_graph():
     plt.grid(True,color='0.7',linestyle=':',linewidth=1)   
 
 
-def excel_to_mysql(file_name):
+def excel_to_mysql():
     file_name = input('파일이름을 입력하세요:')
         
     df=pd.read_excel('d:\\'+ file_name)
@@ -109,21 +98,13 @@ def excel_to_mysql(file_name):
     return df
 
 
-def get_stock_price_from_fdr(self, market,toward, start_date ,end_date = now):
+def get_stock_price_from_fdr(end_date=now):
         
-    self.market = market
-    self.toward = toward
-            
-    if market == 'kospi':
-        data = pd.read_excel('d:\\kospi_list.xlsx')
+    file_name = input('파일이름을 입력하세요:')
+    toward = input('저장 방식을 입력하세요 : sample: excel, sql ')
+    start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
+    data=pd.read_excel('d:\\'+ file_name)
    
-    elif market=='kosdsq':
-        data = pd.read_excel('d:\\kosdsq_list.xlsx')
-    
-    elif market=='market':
-        data = pd.read_excel('d:\\market_list.xlsx')
-
-              
     code_list = data['종목코드'].tolist()
     code_list = [str(item).zfill(6) for item in code_list]
     name_list = data['종목명'].tolist()
@@ -428,7 +409,7 @@ class to_excel:
             print(str(i) + '번째 페이지 크롤링 완료')
             
 
-in __name__ == "__main__":
+if __name__ == "__main__":
     print("This is Module")
     
     
