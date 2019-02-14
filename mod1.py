@@ -23,6 +23,27 @@ engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stoc
 conn = engine.connect()
 
 
+def read_excel_transfer_fdr_to_mysql():
+
+    file_name = input('파일이름을 입력하세요:')
+    date = input("시작날자를 입려하세요 : sample: '2019-01-01'")
+
+    data=pd.read_excel('d:\\'+ file_name)
+
+    code_list = data['종목코드'].tolist()
+    code_list = [str(item).zfill(6) for item in code_list]
+    name_list = data['종목명'].tolist()
+
+    # 코스피 상장종목 전체
+    stock_dic = dict(list(zip(code_list,name_list)))
+
+    for code in sorted(stock_dic.keys()):
+        df  = fdr.DataReader(code,date)
+        print(code,stock_dic[code])
+        df['Code'],df['Name'] = code,stock_dic[code]
+        df = df[['Code','Name','Open','High','Low','Volume','Close']]
+        df.to_sql(name='market', con=engine, if_exists='append')
+
 def stock_select_with_Volume_Close():
     
     yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07 00:00:00'  ") 
