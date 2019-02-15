@@ -34,12 +34,12 @@ def stock_select_with_Volume_Close():
     var = select_query +"'"+yesterday+"'"+ volume_query
     df = pd.read_sql(var ,engine)
 
-    df1 = df[df['Date'] == yesterday]
+    df1 = df[df['Date'].astype(str) == yesterday]
     df1 = df1[['Name','Volume','Close']]
     df1.columns = ['Name','yester_Volume','yester_Close']
     #display(df1)
 
-    df2 = df[df['Date'] == today]
+    df2 = df[df['Date'].astype(str) == today]
     df2 = df2[['Name','Volume','Close']]
     df2.columns = ['Name','today_Volume','today_Close']
     #display(df2)
@@ -62,7 +62,7 @@ def stock_price_graph():
     date = input("날짜를 입력하세요 sample: '2019-01-10':")
     #table= input('write table name:')
     
-    select_query = "select DATE(Date),Close from market where Name= "
+    select_query = "select Date,Close from market where Name= "
     date_query = "Date > "
     
 
@@ -95,9 +95,19 @@ def excel_to_mysql():
     file_name = input('파일이름을 입력하세요:')
         
     df=pd.read_excel('d:\\'+ file_name)
-    df.index.name='Date'
+    if file_name=='kpi200.xlsx':
+        df.columns=['Date','kpi200','거래량']
+        table_name = 'kpi200'
+        
+    elif file_name=='moneytrend.xlsx':
+        df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
+        table_name = 'moneytrend'
+        
+    else:
+        print('\n file_name error\n')
+        
     df.to_sql(name=file_name, con=engine, if_exists='append')
-    return df
+    display(df)
 
 
 def get_stock_price_from_fdr(end_date=now):
@@ -105,6 +115,8 @@ def get_stock_price_from_fdr(end_date=now):
     file_name = input('파일이름을 입력하세요:')
     toward = input('저장 방식을 입력하세요 : sample: excel, sql ')
     start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
+    table_name = input("table명을 입력하세요 : sample: market")
+    
     data=pd.read_excel('d:\\'+ file_name)
    
     code_list = data['종목코드'].tolist()
@@ -114,23 +126,22 @@ def get_stock_price_from_fdr(end_date=now):
     # 코스피 상장종목 전체
     stock_dic = dict(list(zip(code_list,name_list)))
 
-    for code in stock_dic.keys():
-        df  = fdr.DataReader(code,start_date,end_date)
+    for code in sorted(stock_dic.keys()):
+        df  = fdr.DataReader(code,start_date,now)
         print(code,stock_dic[code])
         df['Code'],df['Name'] = code,stock_dic[code]
         df = df[['Code','Name','Open','High','Low','Volume','Close']]
         if toward == 'excel':
             df.to_excel('d:\\data_set\\kospi\\'+ stock_dic[code] +'.xlsx',engine = 'xlsxwriter')
         elif toward == 'sql':
-            df.to_sql(name=market, con=engine, if_exists='append')
-        print(df)
-
+            df.to_sql(name=table_name, con=engine, if_exists='append')
+        
 
 class to_excel:
     
     def get_money_trend(self):
     
-        path = 'd:\\money_trend.xlsx'
+        path = 'd:\\moneytrend.xlsx'
 
         url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='    
         Data = pd.DataFrame(columns = ['고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드'])
@@ -207,7 +218,7 @@ class to_excel:
         year=year[2:]
         until_date = year+'-'+mm+'-'+dd
     
-        path = 'd:\\money_trend.xlsx'
+        path = 'd:\\moneytrend.xlsx'
         print(path)
 
         url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='    
@@ -278,7 +289,7 @@ class to_excel:
             
     def get_kpi_200(self,until_date='1995-12-27'):
     
-        path = 'd:\\kpi_200.xlsx'
+        path = 'd:\\kpi200.xlsx'
         
         url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
         Data = pd.DataFrame(columns = ['KPI200','거래량'])
@@ -345,7 +356,7 @@ class to_excel:
             
     def get_kpi_200_date(self,until_date='1995-12-27'):
     
-        path = 'd:\\kpi_200.xlsx'
+        path = 'd:\\kpi200.xlsx'
         
         url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
         Data = pd.DataFrame(columns = ['KPI200','거래량'])
