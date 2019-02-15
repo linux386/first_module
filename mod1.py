@@ -106,7 +106,7 @@ def excel_to_mysql():
     else:
         print('\n file_name error\n')
         
-    df.to_sql(name=file_name, con=engine, if_exists='append')
+    df.to_sql(name=table_name, con=engine, if_exists='append')
     display(df)
 
 
