@@ -25,8 +25,8 @@ conn = engine.connect()
 
 def stock_select_with_Volume_Close():
     
-    yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07 00:00:00'  ") 
-    today = input("오늘날짜를 입력하세요 : sample: '2019-02-07 00:00:00'  ")
+    yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07'  ") 
+    today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ")
     
     select_query = "select * from market where Date >="
     volume_query = "&& Volume >  500000"
@@ -90,6 +90,33 @@ def stock_price_graph():
     plt.legend(loc=0)
     plt.grid(True,color='0.7',linestyle=':',linewidth=1)   
 
+def money_trend_graph():
+    
+    name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드'").split()
+    date = input("날짜를 입력하세요 sample: '2019-01-10':")
+    #table= input('write table name:')
+    
+    query = "select * from kpi_with_money where Date >"+"'"+date+"'"
+    
+    #print("\n")
+    tuple_name=tuple(name)
+    df1 = pd.DataFrame()
+    
+    for x in tuple_name:
+        df = pd.read_sql(query ,engine)
+        df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
+        if df1.empty:
+            df1 = df
+        else:
+            df1 = pd.merge (df,df1,on='Date')
+    df1=df1.set_index('Date')
+    #first_date = date_format(df['Date'][0])
+    plt.figure(figsize=(12,5))
+    for i in range(len(name)):
+        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
+        #plt.plot(df1[name[1]]/df1[name[1]].loc[dt.date(2017,1,2)]*100)
+    plt.legend(loc=0)
+    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
 
 def excel_to_mysql():
     file_name = input('파일이름을 입력하세요:')
@@ -211,6 +238,8 @@ class to_excel:
             print(str(i) + '번째 페이지 크롤링 완료')
 
     def get_money_trend_date(self,until_date='2000-12-27'):
+        
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
         
         year = until_date.split('-')[0]
         mm = until_date.split('-')[1]
@@ -355,7 +384,9 @@ class to_excel:
             
             
     def get_kpi_200_date(self,until_date='1995-12-27'):
-    
+        
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
+            
         path = 'd:\\kpi200.xlsx'
         
         url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
