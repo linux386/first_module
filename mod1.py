@@ -57,24 +57,18 @@ def stock_select_with_Volume_Close():
     display(df4)
 
 def stock_price_graph():
-    
     name = input('주식이름을 입력하세요:').split()
     date = input("날짜를 입력하세요 sample: '2019-01-10':")
-    #table= input('write table name:')
-    
+        
     select_query = "select Date,Close from market where Name= "
     date_query = "Date > "
     
 
-    #print("\n")
     tuple_name=tuple(name)
     df1 = pd.DataFrame()
     
     for x in tuple_name:
-        #print(x)
-        
         var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
-        #print(var)
         df = pd.read_sql(var ,engine)
         df.columns=['Date',x]
         if df1.empty:
@@ -82,41 +76,36 @@ def stock_price_graph():
         else:
             df1 = pd.merge (df,df1,on='Date')
     df1=df1.set_index('Date')
-    #first_date = date_format(df['Date'][0])
-    plt.figure(figsize=(12,5))
     for i in range(len(name)):
         plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
-        #plt.plot(df1[name[1]]/df1[name[1]].loc[dt.date(2017,1,2)]*100)
+        
     plt.legend(loc=0)
-    plt.grid(True,color='0.7',linestyle=':',linewidth=1)   
+    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+plt.show()
 
 def money_trend_graph():
     
     name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드'").split()
     date = input("날짜를 입력하세요 sample: '2019-01-10':")
-    #table= input('write table name:')
     
     query = "select * from kpi_with_money where Date >"+"'"+date+"'"
     
-    #print("\n")
     tuple_name=tuple(name)
     df1 = pd.DataFrame()
     
-    for x in tuple_name:
-        df = pd.read_sql(query ,engine)
-        df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
-        if df1.empty:
-            df1 = df
-        else:
-            df1 = pd.merge (df,df1,on='Date')
-    df1=df1.set_index('Date')
-    #first_date = date_format(df['Date'][0])
-    plt.figure(figsize=(12,5))
+    df = pd.read_sql(query ,engine)
+
+    df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
+    df = df.set_index('Date')
+    df1=df[name]
+
+
     for i in range(len(name)):
-        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
-        #plt.plot(df1[name[1]]/df1[name[1]].loc[dt.date(2017,1,2)]*100)
+        plt.plot(df1[name[i]]/df1[name[i]].loc[df.index[0]]*100)
+        
     plt.legend(loc=0)
     plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+plt.show()
 
 def excel_to_mysql():
     file_name = input('파일이름을 입력하세요:')
