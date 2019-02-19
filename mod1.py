@@ -14,6 +14,8 @@ from urllib.request import urlopen
 import sqlalchemy 
 import pymysql
 import matplotlib.pyplot as plt
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 from matplotlib import font_manager, rc
 font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
 rc('font', family=font_name)
@@ -108,22 +110,24 @@ def money_trend_graph():
 plt.show()
 
 def excel_to_mysql():
+
     file_name = input('파일이름을 입력하세요:')
         
     df=pd.read_excel('d:\\'+ file_name)
     if file_name=='kpi200.xlsx':
         df.columns=['Date','kpi200','거래량']
         table_name = 'kpi200'
-        
+        #df = df.set_index('Date')
     elif file_name=='moneytrend.xlsx':
-        df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
         table_name = 'moneytrend'
-        
+        df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
+        #df = df.set_index('Date')
     else:
         print('\n file_name error\n')
-        
-    df.to_sql(name=table_name, con=engine, if_exists='append')
-    display(df)
+    
+    df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
+
+    print(df)
 
 
 def get_stock_price_from_fdr(end_date=now):
@@ -155,7 +159,7 @@ def get_stock_price_from_fdr(end_date=now):
 
 class to_excel:
     
-    def get_money_trend(self):
+    def get_moneytrend(self):
     
         path = 'd:\\moneytrend.xlsx'
 
@@ -226,7 +230,7 @@ class to_excel:
 
             print(str(i) + '번째 페이지 크롤링 완료')
 
-    def get_money_trend_date(self,until_date='2000-12-27'):
+    def get_moneytrend_date(self,until_date='2000-12-27'):
         
         until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
         
@@ -305,7 +309,7 @@ class to_excel:
                 
             print(str(i) + '번째 페이지 크롤링 완료')
             
-    def get_kpi_200(self,until_date='1995-12-27'):
+    def get_kpi200(self,until_date='1995-12-27'):
     
         path = 'd:\\kpi200.xlsx'
         
@@ -372,7 +376,7 @@ class to_excel:
             print(str(i) + '번째 페이지 크롤링 완료')
             
             
-    def get_kpi_200_date(self,until_date='1995-12-27'):
+    def get_kpi200_date(self,until_date='1995-12-27'):
         
         until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
             
