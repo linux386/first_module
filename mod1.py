@@ -78,6 +78,7 @@ def stock_price_graph():
         else:
             df1 = pd.merge (df,df1,on='Date')
     df1=df1.set_index('Date')
+    plt.figure(figsize=(16,4))
     for i in range(len(name)):
         plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
         
@@ -101,7 +102,7 @@ def money_trend_graph():
     df = df.set_index('Date')
     df1=df[name]
 
-
+    plt.figure(figsize=(16,4))
     for i in range(len(name)):
         plt.plot(df1[name[i]]/df1[name[i]].loc[df.index[0]]*100)
         
@@ -117,11 +118,30 @@ def excel_to_mysql():
     if file_name=='kpi200.xlsx':
         df.columns=['Date','kpi200','거래량']
         table_name = 'kpi200'
-        #df = df.set_index('Date')
+ 
     elif file_name=='moneytrend.xlsx':
         table_name = 'moneytrend'
         df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
-        #df = df.set_index('Date')
+        
+    elif file_name=='market.xlsx':
+        data = pd.read_excel('d:\\market.xlsx')
+        start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
+
+        code_list = data['종목코드'].tolist()
+        code_list = [str(item).zfill(6) for item in code_list]
+        name_list = data['종목명'].tolist()
+
+        # 코스피 상장종목 전체
+        stock_dic = dict(list(zip(code_list,name_list)))
+
+        for code in sorted(stock_dic.keys()):
+            df  = fdr.DataReader(code,start_date)
+            print(code,stock_dic[code])
+            df['Code'],df['Name'] = code,stock_dic[code]
+            df = df[['Code','Name','Open','High','Low','Volume','Close']]
+            df.to_sql(name='market', con=engine, if_exists='append')
+        return 
+    
     else:
         print('\n file_name error\n')
     
