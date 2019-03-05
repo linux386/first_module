@@ -88,7 +88,7 @@ plt.show()
 
 def money_trend_graph():
     
-    name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드'").split()
+    name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드' : ").split()
     date = input("날짜를 입력하세요 sample: '2019-01-10':")
     
     query = "select * from kpi_with_money where Date >"+"'"+date+"'"
@@ -109,6 +109,32 @@ def money_trend_graph():
     plt.legend(loc=0)
     plt.grid(True,color='0.7',linestyle=':',linewidth=1)
 plt.show()
+
+def money_trend_graph_1():
+    
+    name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드' : ").split()
+    date = input("날짜를 입력하세요 sample: '2019-01-10':")
+    
+    query = "select * from kpi_with_money where Date >"+"'"+date+"'"
+    
+    tuple_name=tuple(name)
+    df1 = pd.DataFrame()
+    
+    df = pd.read_sql(query ,engine)
+
+    df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
+    df = df.set_index('Date')
+    df1=df[name]
+
+    plt.figure(figsize=(16,4))
+    colors = ['red','green','blue','black']
+    for i in range(len(name)):
+        plt.subplot(2,2,i+1)
+        plt.plot(df1[name[i]]/df1[name[i]].loc[df.index[0]]*100,color=colors[i])
+    
+        plt.legend(loc=0)
+        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+
 
 def excel_to_mysql():
 
