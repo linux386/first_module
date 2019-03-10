@@ -145,6 +145,10 @@ def excel_to_mysql():
         df.columns=['Date','kpi200','거래량']
         table_name = 'kpi200'
  
+    elif file_name=='investortrend.xlsx':
+        table_name = 'investortrend'
+        df.columns=['Date', '개인', '외국인','기관']
+        
     elif file_name=='moneytrend.xlsx':
         table_name = 'moneytrend'
         df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
@@ -425,7 +429,6 @@ class to_excel:
     def get_kpi200_date(self,until_date='1995-12-27'):
         
         until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
-            
         path = 'd:\\kpi200.xlsx'
         
         url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
@@ -490,6 +493,134 @@ class to_excel:
                     dictionary['거래량'].pop(-1)
                 
             print(str(i) + '번째 페이지 크롤링 완료')
+            
+    def get_investor_trend():
+        url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+        path = 'd:\\investortrend.xlsx'
+
+        date_list = []
+        private = []
+        foreign = []
+        institution = []
+
+        for i in range(1,500):
+            source = urlopen(url+ str(i)).read()
+            source = BeautifulSoup(source,'lxml')
+
+    
+            body = source.find('body')
+            tr = body.find_all('tr')
+
+            for r in tr:
+                date = r.find('td',{'class':'date2'})
+    
+                if date != None:
+                    date = date.text.strip().replace('.','-')
+                
+                    # 날짜가 중첩되지 않으면 계속 크롤링 : 
+                    if not date in date_list:
+                        date_list.append(date)
+                        #print(date)
+                
+                    # 더 이상 자료가 없어, 날짜가 중첩되면 : 크롤링 완료
+                    else:
+                        print(str(i-1) + '번째 페이지에서 크롤링 종료')
+                        df = pd.DataFrame(index = date_list)
+                        df['개인'] = private
+                        df['외국인'] = foreign
+                        df['기관'] = institution
+                    
+                        df.to_excel(path, encoding='utf-8')
+                        return df
+                
+                    td = r.find_all('td')
+        
+                    count = 0
+        
+                    # 앞에서 3개 값 '개인' , '외국인' , '기관' 만 가져온다
+                    for d in td:
+                        if count != 3:
+                            d = d.text.replace(',','')
+                        try:
+                            d = int(d)
+                    
+                            if count == 0 :
+                                private.append(d)
+                            elif count == 1 :
+                                foreign.append(d)
+                            else:
+                                institution.append(d)
+                        
+                            count += 1
+                    
+                        except:
+                            count = count
+
+            print(str(i) + '번째 페이지 크롤링 완료')
+            
+    def get_investor_trend_date(self,until_date='1995-12-27'):
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
+        
+        url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+        path = 'd:\\investortrend.xlsx'
+
+        date_list = []
+        private = []
+        foreign = []
+        institution = []
+
+        for i in range(1,500):
+            source = urlopen(url+ str(i)).read()
+            source = BeautifulSoup(source,'lxml')
+
+    
+            body = source.find('body')
+            tr = body.find_all('tr')
+
+            for r in tr:
+                date = r.find('td',{'class':'date2'})
+    
+                if date != None:
+                    date = date.text.strip().replace('.','-')
+                
+                    # 날짜가 중첩되지 않으면 계속 크롤링 : 
+                    if not date in date_list :
+                        date_list.append(date)
+                        
+                        
+                                    
+                        #마지막 페이지인 경우
+                        if date <= until_date:
+                            print(str(i-1) + '번째 페이지에서 크롤링 종료')
+                            df = pd.DataFrame(index = date_list)
+                            print(df)
+                            return df
+
+                    td = r.find_all('td')
+        
+                    count = 0
+        
+                    # 앞에서 3개 값 '개인' , '외국인' , '기관' 만 가져온다
+                    for d in td:
+                        if count != 3:
+                            d = d.text.replace(',','')
+                        try:
+                            d = int(d)
+                    
+                            if count == 0 :
+                                private.append(d)
+                            elif count == 1 :
+                                foreign.append(d)
+                            else:
+                                institution.append(d)
+                        
+                            count += 1
+                    
+                        except:
+                            count = count
+
+            print(str(i) + '번째 페이지 크롤링 완료')
+            
             
 
 if __name__ == "__main__":
