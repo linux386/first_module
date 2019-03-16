@@ -153,6 +153,10 @@ def excel_to_mysql():
         table_name = 'moneytrend'
         df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
         
+    elif file_name=='programtrend.xlsx':
+        table_name = 'programtrend'
+        df.columns=['Date', '차익', '비차익','전체']
+        
     elif file_name=='market.xlsx':
         data = pd.read_excel('d:\\market.xlsx')
         start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
@@ -211,211 +215,211 @@ class to_excel:
     
     def get_moneytrend(self):
     
-        path = 'd:\\moneytrend.xlsx'
+        url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
 
-        url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='    
-        Data = pd.DataFrame(columns = ['고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드'])
-        date_list = []
+        source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
+        source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
+
+        last = source.find('td',class_='pgRR').find('a')['href']
+        last = last.split('&')[1]
+        last = last.split('=')[1]
+        last = int(last)
+
+        # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
+        path = 'd:\\moneytrend.xlsx'   
     
+        # 날짜를 받을 리스트
+        date_list = []
+
         # 값을 받을 사전
-        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형펀드': [],'혼합형펀드': [],'채권형펀드': []}
+        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형 펀드': [],'혼합형 펀드': [],'채권형 펀드': []}
 
         # dictionary key 인덱싱을 위한 리스트
-        name_list = ['고객예탁금','신용잔고','주식형펀드','혼합형펀드','채권형펀드']
+        name_list = ['고객예탁금','신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드']
+
 
         # count mask
-        mask = [0,1,3,5,7,9]
+        mask = [1,3,5,7,9]
     
-        for i in range(1,300):
+        for i in range(1,last+1):
+        
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
-            tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
-            trs = tbody.find_all('tr')
+            #tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
+            #trs = tbody.find_all('tr')
+
+            body = source.find('body')
+            trs = body.find_all('tr')
+
             for tr in trs:
-                tds = tr.find_all('td')
+                tds = tr.find_all('td',{'class':['date','rate_down','rate_up']})
                 count = 0
     
                 for td in tds:
-                    # 변화량 제외하고 잔고량만 가져오기
-                    if not td.text.strip() == 0:
-                        if len(td.text.strip()) >= 4:
-            
-                            if count == 0:
-                                date_ = td.text.strip().replace('.','-')
+                    if count == 0:
+                        date_ = td.text.strip().replace('.','-')
+                        date_list.append(date_)
                         
-                                if not date_ in date_list:
-                                    date_list.append(date_)
-                        
-                                #마지막 페이지인 경우
-                                else:
-                                    print(str(i-1) + '번째 페이지에서 크롤링 종료')
-                                
-                                    df = pd.DataFrame(dictionary,index = date_list)
-                                    df = df.sort_index()
-                                    df.고객예탁금 = df.고객예탁금.str.replace(',','')
-                                    df.신용잔고 = df.신용잔고.str.replace(',','')
-                                    df.주식형펀드 = df.주식형펀드.str.replace(',','')
-                                    df.혼합형펀드 = df.혼합형펀드.str.replace(',','')
-                                    df.채권형펀드 = df.채권형펀드.str.replace(',','')
-                                    df.to_excel(path, encoding='utf-8')
-                                
-                                    return df
-
-                            elif count in mask:
-                                temp = int((count-1)/2)
-                                dictionary[name_list[temp]].append(td.text.strip())
+                      
+                    elif count in mask:
+                        temp = int((count-1)/2)
+                        dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
         
-                        count += 1
-            
-                # 누락된 값을 발견하면 (펀드 자료에 누락된 값이 존재함)
-                if len(dictionary['고객예탁금']) != len(dictionary['주식형펀드']):
+                    count += 1
+                if len(dictionary['고객예탁금']) != len(dictionary['채권형 펀드']):
                     print(str(i)+ '번째 페이지에서 누락된 값 발생')
                     print('누락된 데이터를 제거합니다')
                     
                     date_list.pop(-1)
                     dictionary['고객예탁금'].pop(-1)
                     dictionary['신용잔고'].pop(-1)
-               
-
-            print(str(i) + '번째 페이지 크롤링 완료')
+                    dictionary['주식형 펀드'].pop(-1)
+                    dictionary['혼합형 펀드'].pop(-1)
+                
+        # 개별 list 요소 갯수 파악 
+        #print(len(date_list))
+        #print(len(dictionary['고객예탁금']))
+        #print(len(dictionary['신용잔고']))
+        #print(len(dictionary['주식형 펀드']))
+        #print(len(dictionary['혼합형 펀드']))
+        #print(len(dictionary['채권형 펀드']))
+        print(str(i) + '번째 페이지 크롤링 완료')
+        df = pd.DataFrame(dictionary,index = date_list)
+        df = df.sort_index()
+        df.to_excel(path, encoding='utf-8')
+        print(df)
 
     def get_moneytrend_date(self,until_date='2000-12-27'):
         
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
-        
+        url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
+
+        source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
+        source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
+
+        last = source.find('td',class_='pgRR').find('a')['href']
+        last = last.split('&')[1]
+        last = last.split('=')[1]
+        last = int(last)
+
+        # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
+        path = 'd:\\moneytrend.xlsx'
+
+    
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+    
         year = until_date.split('-')[0]
         mm = until_date.split('-')[1]
         dd = until_date.split('-')[2]
         year=year[2:]
         until_date = year+'-'+mm+'-'+dd
     
-        path = 'd:\\moneytrend.xlsx'
-        print(path)
+        #df = DataFrame(columns = ['고객예탁금', '신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드'])
 
-        url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='    
-        Data = pd.DataFrame(columns = ['고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드'])
+        # 날짜를 받을 리스트
         date_list = []
+
     
         # 값을 받을 사전
-        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형펀드': [],'혼합형펀드': [],'채권형펀드': []}
+        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형 펀드': [],'혼합형 펀드': [],'채권형 펀드': []}
 
         # dictionary key 인덱싱을 위한 리스트
-        name_list = ['고객예탁금','신용잔고','주식형펀드','혼합형펀드','채권형펀드']
+        name_list = ['고객예탁금','신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드']
+
 
         # count mask
-        mask = [0,1,3,5,7,9]
+        mask = [1,3,5,7,9]
     
-        for i in range(1,300):
+        for i in range(1,last+1):
+        
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
-            tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
-            trs = tbody.find_all('tr')
+            #tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
+            #trs = tbody.find_all('tr')
+
+            body = source.find('body')
+            trs = body.find_all('tr')
+
             for tr in trs:
-                tds = tr.find_all('td')
+                tds = tr.find_all('td',{'class':['date','rate_down','rate_up']})
                 count = 0
     
                 for td in tds:
-                    # 변화량 제외하고 잔고량만 가져오기
-                    if not td.text.strip() == 0:
-                        if len(td.text.strip()) >= 4:
-            
-                            if count == 0:
-                                date_ = td.text.strip().replace('.','-')
-                        
-                                if not date_ in date_list :
-                                    date_list.append(date_)
-                        
-                                #마지막 페이지인 경우
-                                    if date_ <= until_date or i > 3:
-                                        print(str(i-1) + '번째 페이지에서 크롤링 종료')
-                                        date_list.pop(-1)
-                                        df = pd.DataFrame(dictionary,index = date_list)
-                                        df = df.sort_index()
-                                        df.고객예탁금 = df.고객예탁금.str.replace(',','')
-                                        df.신용잔고 = df.신용잔고.str.replace(',','')
-                                        df.주식형펀드 = df.주식형펀드.str.replace(',','')
-                                        df.혼합형펀드 = df.혼합형펀드.str.replace(',','')
-                                        df.채권형펀드 = df.채권형펀드.str.replace(',','')
-                                        df.to_excel(path, encoding='utf-8')
-                                
-                                        return df
-
-                            elif count in mask:
-                                temp = int((count-1)/2)
-                                dictionary[name_list[temp]].append(td.text.strip())
-        
-                        count += 1
-            
-                # 누락된 값을 발견하면 (펀드 자료에 누락된 값이 존재함)
-                if len(dictionary['고객예탁금']) != len(dictionary['주식형펀드']):
-                    print(str(i)+ '번째 페이지에서 누락된 값 발생')
-                    print('누락된 데이터를 제거합니다')
+                    if count == 0:
+                        date_ = td.text.strip().replace('.','-')
+                        if date_ <=  until_date :
+                        #if date_ <=  '19-03-05' :
+                            df = pd.DataFrame(dictionary,index = date_list)
+                            df = df.sort_index()
+                            df.to_excel(path, encoding='utf-8')
+                            return df
+                        date_list.append(date_)
                     
-                    date_list.pop(-1)
-                    dictionary['고객예탁금'].pop(-1)
-                    dictionary['신용잔고'].pop(-1)
+                    elif count in mask:
+                        temp = int((count-1)/2)
+                        dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
                 
-            print(str(i) + '번째 페이지 크롤링 완료')
+       
+                    count += 1
             
-    def get_kpi200(self,until_date='1995-12-27'):
-    
-        path = 'd:\\kpi200.xlsx'
+            
+    def get_kpi200(self):
         
         url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
-        Data = pd.DataFrame(columns = ['KPI200','거래량'])
-        date_list = []
+
+        source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
+        source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
+
+        last = source.find('td',class_='pgRR').find('a')['href']
+        last = last.split('page')[1]
+        last = last.split('=')[1]
+        last = int(last)
+        print(last)
+
+        # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
+        path = 'd:\\kpi200.xlsx'
     
+        # 날짜를 받을 리스트
+        date_list = []
+
         # 값을 받을 사전
         dictionary = {'KPI200': [],'거래량': []}
 
         # dictionary key 인덱싱을 위한 리스트
         name_list = ['KPI200','거래량']
 
+
         # count mask
-        mask = [0,1,5]
+        mask = [1,3]
     
-        for i in range(1,700):
+        for i in range(1,last+1):
+        
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
-            tbody = source.find('div',{'class':'box_type_m'})
-            trs = tbody.find_all('tr')
+            #tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
+            #trs = tbody.find_all('tr')
+
+            body = source.find('body')
+            trs = body.find_all('tr')
+
             for tr in trs:
-                tds = tr.find_all('td')
+                tds = tr.find_all('td',{'class':['date','number_1']})
                 count = 0
     
                 for td in tds:
-                    # 변화량 제외하고 잔고량만 가져오기
-                    if not td.text.strip() == 0:
-                        if len(td.text.strip()) >= 4:
-            
-                            if count == 0:
-                                date_ = td.text.strip().replace('.','-')
+                    if count == 0:
+                        date_ = td.text.strip().replace('.','-')
+                        date_list.append(date_)
                         
-                                if not date_ in date_list :
-                                    date_list.append(date_)
-                                    
-                                #마지막 페이지인 경우
-                                else:
-                                    print(str(i-1) + '번째 페이지에서 크롤링 종료')
-                                    df = pd.DataFrame(dictionary,index = date_list)
-                                    df = df.sort_index()
-                                    df.거래량 = df.거래량.str.replace(',','')
-                                    df.to_excel(path, encoding='utf-8')
-                                
-                                    return df
-
-                            elif count in mask:
-                                temp = int(count/5)
-                                dictionary[name_list[temp]].append(td.text.strip())
-                                
-                        #print(count)
-                        count += 1
-            
-                # 누락된 값을 발견하면 (펀드 자료에 누락된 값이 존재함)
-                if len(dictionary['KPI200']) != len(dictionary['거래량']):
+                      
+                    elif count in mask:
+                        temp = int(count/3)
+                        dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
+        
+                    count += 1
+                if len(date_list) != len(dictionary['KPI200']):
                     print(str(i)+ '번째 페이지에서 누락된 값 발생')
                     print('누락된 데이터를 제거합니다')
                     
@@ -423,203 +427,230 @@ class to_excel:
                     dictionary['KPI200'].pop(-1)
                     dictionary['거래량'].pop(-1)
                 
-            print(str(i) + '번째 페이지 크롤링 완료')
-            
-            
-    def get_kpi200_date(self,until_date='1995-12-27'):
-        
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
-        path = 'd:\\kpi200.xlsx'
-        
-        url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
-        Data = pd.DataFrame(columns = ['KPI200','거래량'])
-        date_list = []
+        # 개별 list 요소 갯수 파악 
+        #print(len(date_list))
+        #print(len(dictionary['개인']))
+        #print(len(dictionary['외국인']))
+        #print(len(dictionary['기관']))
+
+        print(str(i) + '번째 페이지 크롤링 완료')
+        df = pd.DataFrame(dictionary,index = date_list)
+        df = df.sort_index()
+        df.to_excel(path, encoding='utf-8')
+        print(df)
+       
+
+    def get_kpi200_date(self,until_date='2000-12-27'):
     
+        url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
+
+        source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
+        source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
+
+        last = source.find('td',class_='pgRR').find('a')['href']
+        last = last.split('page')[1]
+        last = last.split('=')[1]
+        last = int(last)
+        print(last)
+
+        # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
+        path = 'd:\\kpi200.xlsx'
+
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+    
+        year = until_date.split('-')[0]
+        mm = until_date.split('-')[1]
+        dd = until_date.split('-')[2]
+        #year=year[2:]
+        until_date = year+'-'+mm+'-'+dd
+    
+        # 날짜를 받을 리스트
+        date_list = []
+
         # 값을 받을 사전
         dictionary = {'KPI200': [],'거래량': []}
 
         # dictionary key 인덱싱을 위한 리스트
         name_list = ['KPI200','거래량']
 
+
         # count mask
-        mask = [0,1,5]
+        mask = [1,3]
     
-        for i in range(1,700):
+        for i in range(1,last+1):
+        
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
-            tbody = source.find('div',{'class':'box_type_m'})
-            trs = tbody.find_all('tr')
+            #tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
+            #trs = tbody.find_all('tr')
+
+            body = source.find('body')
+            trs = body.find_all('tr')
+
             for tr in trs:
-                tds = tr.find_all('td')
+                tds = tr.find_all('td',{'class':['date','number_1']})
                 count = 0
     
                 for td in tds:
-                    # 변화량 제외하고 잔고량만 가져오기
-                    if not td.text.strip() == 0:
-                        if len(td.text.strip()) >= 4:
-            
-                            if count == 0:
-                                date_ = td.text.strip().replace('.','-')
-                        
-                                if not date_ in date_list :
-                                    date_list.append(date_)
-                                    
-                                    #마지막 페이지인 경우
-                                    if date_ <= until_date or i > 3:
-                                        print(str(i-1) + '번째 페이지에서 크롤링 종료')
-                                        date_list.pop(-1)
-                                        df = pd.DataFrame(dictionary,index = date_list)
-                                        df = df.sort_index()
-                                        df.거래량 = df.거래량.str.replace(',','')
-                                        df.to_excel(path, encoding='utf-8')
-                                
-                                        return df
-
-                            elif count in mask:
-                                temp = int(count/5)
-                                dictionary[name_list[temp]].append(td.text.strip())
-                                
-                        #print(count)
-                        count += 1
-            
-                # 누락된 값을 발견하면 (펀드 자료에 누락된 값이 존재함)
-                if len(dictionary['KPI200']) != len(dictionary['거래량']):
-                    print(str(i)+ '번째 페이지에서 누락된 값 발생')
-                    print('누락된 데이터를 제거합니다')
+                    if count == 0:
+                        date_ = td.text.strip().replace('.','-')
+                        if date_ <=  until_date :
+                        #if date_ <=  '19-03-05' :
+                            df = pd.DataFrame(dictionary,index = date_list)
+                            df = df.sort_index()
+                            df.to_excel(path, encoding='utf-8')
+                            return df   
+                        date_list.append(date_)
+                        #print(date_list)
+                    elif count in mask:
+                        temp = int(count/3)
+                        dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
+                        #print(dictionary[name_list[temp]])
+                    count += 1
                     
-                    date_list.pop(-1)
-                    dictionary['KPI200'].pop(-1)
-                    dictionary['거래량'].pop(-1)
-                
-            print(str(i) + '번째 페이지 크롤링 완료')
-            
-    def get_investor_trend():
+                    
+    def get_investor_trend(self):
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+
+        source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
+        source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
+
+        last = source.find('td',class_='pgRR').find('a')['href']
+        last = last.split('page')[1]
+        last = last.split('=')[1]
+        last = int(last)
+        print(last)
+
+        # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\investortrend.xlsx'
 
+        # 날짜를 받을 리스트
         date_list = []
-        private = []
-        foreign = []
-        institution = []
 
-        for i in range(1,500):
+        # 값을 받을 사전
+        dictionary = {'개인': [],'외국인': [],'기관': []}
+
+        # dictionary key 인덱싱을 위한 리스트
+        name_list = ['개인','외국인','기관']
+
+
+        # count mask
+        mask = [1,2,3]
+    
+        for i in range(1,last+1):
+
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
-    
+            #tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
+            #trs = tbody.find_all('tr')
+
             body = source.find('body')
-            tr = body.find_all('tr')
+            trs = body.find_all('tr')
 
-            for r in tr:
-                date = r.find('td',{'class':'date2'})
-    
-                if date != None:
-                    date = date.text.strip().replace('.','-')
-                
-                    # 날짜가 중첩되지 않으면 계속 크롤링 : 
-                    if not date in date_list:
-                        date_list.append(date)
-                        #print(date)
-                
-                    # 더 이상 자료가 없어, 날짜가 중첩되면 : 크롤링 완료
-                    else:
-                        print(str(i-1) + '번째 페이지에서 크롤링 종료')
-                        df = pd.DataFrame(index = date_list)
-                        df['개인'] = private
-                        df['외국인'] = foreign
-                        df['기관'] = institution
-                    
-                        df.to_excel(path, encoding='utf-8')
-                        return df
-                
-                    td = r.find_all('td')
-        
-                    count = 0
-        
-                    # 앞에서 3개 값 '개인' , '외국인' , '기관' 만 가져온다
-                    for d in td:
-                        if count != 3:
-                            d = d.text.replace(',','')
-                        try:
-                            d = int(d)
-                    
-                            if count == 0 :
-                                private.append(d)
-                            elif count == 1 :
-                                foreign.append(d)
-                            else:
-                                institution.append(d)
-                        
-                            count += 1
-                    
-                        except:
-                            count = count
+            for tr in trs:
+                tds = tr.find_all('td',{'class':['date2','rate_down3','rate_up3']})
+                count = 0
 
-            print(str(i) + '번째 페이지 크롤링 완료')
+                for td in tds:
+                    if count == 0:
+                        date_ = td.text.strip().replace('.','-')
+                        date_list.append(date_)
+
+
+                    elif count in mask:
+                        temp = int(count-1)
+                        dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
+        
+                    count += 1
+                if len(date_list) != len(dictionary['개인']):
+                    print(str(i)+ '번째 페이지에서 누락된 값 발생')
+                    print('누락된 데이터를 제거합니다')
+
+                    date_list.pop(-1)
+                    dictionary['개인'].pop(-1)
+                    dictionary['외국인'].pop(-1)
+                    dictionary['기관'].pop(-1)
+                
+        # 개별 list 요소 갯수 파악 
+        #print(len(date_list))
+        #print(len(dictionary['개인']))
+        #print(len(dictionary['외국인']))
+        #print(len(dictionary['기관']))
+
+        print(str(i) + '번째 페이지 크롤링 완료')
+        df = pd.DataFrame(dictionary,index = date_list)
+        df = df.sort_index()
+        df.to_excel(path, encoding='utf-8')
+        print(df)
             
     def get_investor_trend_date(self,until_date='1995-12-27'):
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10':")
-        
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+
+        source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
+        source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
+
+        last = source.find('td',class_='pgRR').find('a')['href']
+        last = last.split('page')[1]
+        last = last.split('=')[1]
+        last = int(last)
+        print(last)
+
+        # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\investortrend.xlsx'
 
-        date_list = []
-        private = []
-        foreign = []
-        institution = []
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
 
-        for i in range(1,500):
+        year = until_date.split('-')[0]
+        mm = until_date.split('-')[1]
+        dd = until_date.split('-')[2]
+        year=year[2:]
+        until_date = year+'-'+mm+'-'+dd
+
+        # 날짜를 받을 리스트
+        date_list = []
+
+        # 값을 받을 사전
+        dictionary = {'개인': [],'외국인': [],'기관': []}
+
+        # dictionary key 인덱싱을 위한 리스트
+        name_list = ['개인','외국인','기관']
+
+
+        # count mask
+        mask = [1,2,3]
+
+        for i in range(1,last+1):
+
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
-    
+            #tbody = source.find('div',{'id':'wrap'}).find('div',{'class':'box_type_m'})
+            #trs = tbody.find_all('tr')
+
             body = source.find('body')
-            tr = body.find_all('tr')
+            trs = body.find_all('tr')
 
-            for r in tr:
-                date = r.find('td',{'class':'date2'})
-    
-                if date != None:
-                    date = date.text.strip().replace('.','-')
-                
-                    # 날짜가 중첩되지 않으면 계속 크롤링 : 
-                    if not date in date_list :
-                        date_list.append(date)
-                        
-                        
-                                    
-                        #마지막 페이지인 경우
-                        if date <= until_date:
-                            print(str(i-1) + '번째 페이지에서 크롤링 종료')
-                            df = pd.DataFrame(index = date_list)
-                            print(df)
-                            return df
+            for tr in trs:
+                tds = tr.find_all('td',{'class':['date2','rate_down3','rate_up3']})
+                count = 0
 
-                    td = r.find_all('td')
-        
-                    count = 0
-        
-                    # 앞에서 3개 값 '개인' , '외국인' , '기관' 만 가져온다
-                    for d in td:
-                        if count != 3:
-                            d = d.text.replace(',','')
-                        try:
-                            d = int(d)
-                    
-                            if count == 0 :
-                                private.append(d)
-                            elif count == 1 :
-                                foreign.append(d)
-                            else:
-                                institution.append(d)
-                        
-                            count += 1
-                    
-                        except:
-                            count = count
+                for td in tds:
+                    if count == 0:
+                        date_ = td.text.strip().replace('.','-')
+                        if date_ <=  until_date :
+                            df = pd.DataFrame(dictionary,index = date_list)
+                            df = df.sort_index()
+                            df.to_excel(path, encoding='utf-8')
+                            return df   
+                        date_list.append(date_)
+                        #print(date_list)
+                    elif count in mask:
+                        temp = int(count-1)
+                        dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
 
-            print(str(i) + '번째 페이지 크롤링 완료')
+                    count += 1
             
             
 
