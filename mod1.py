@@ -58,83 +58,78 @@ def stock_select_with_Volume_Close():
     display(df3)
     display(df4)
 
-def stock_price_graph():
-    name = input('주식이름을 입력하세요:').split()
-    date = input("날짜를 입력하세요 sample: '2019-01-10':")
-        
-    select_query = "select Date,Close from market where Name= "
-    date_query = "Date > "
-    
-
-    tuple_name=tuple(name)
-    df1 = pd.DataFrame()
-    
-    for x in tuple_name:
-        var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
-        df = pd.read_sql(var ,engine)
-        df.columns=['Date',x]
-        if df1.empty:
-            df1 = df
-        else:
-            df1 = pd.merge (df,df1,on='Date')
-    df1=df1.set_index('Date')
-    plt.figure(figsize=(16,4))
-    for i in range(len(name)):
-        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
-        
-    plt.legend(loc=0)
-    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-plt.show()
-
-def money_trend_graph():
-    
-    name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드' : ").split()
+def get_graph():
+    graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock': ")
     date = input("날짜를 입력하세요 sample: '2019-01-10':")
     
-    query = "select * from kpi_with_money where Date >"+"'"+date+"'"
-    
-    tuple_name=tuple(name)
-    df1 = pd.DataFrame()
-    
-    df = pd.read_sql(query ,engine)
-
-    df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
-    df = df.set_index('Date')
-    df1=df[name]
-
-    plt.figure(figsize=(16,4))
-    for i in range(len(name)):
-        plt.plot(df1[name[i]]/df1[name[i]].loc[df.index[0]]*100)
+    if graph == 'money' :
+        money_name = ['kpi200', '거래량', '고객예탁금', '신용잔고']
+        money_query = "select * from kpi_with_money where Date >"+"'"+date+"'"
+        money_df = pd.read_sql(money_query ,engine)
         
-    plt.legend(loc=0)
-    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-plt.show()
+        money_df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
+        money_df = money_df.set_index('Date')
+        df1 = money_df[money_name]
+        #return df1
 
-def money_trend_graph_1():
-    
-    name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드' : ").split()
-    date = input("날짜를 입력하세요 sample: '2019-01-10':")
-    
-    query = "select * from kpi_with_money where Date >"+"'"+date+"'"
-    
-    tuple_name=tuple(name)
-    df1 = pd.DataFrame()
-    
-    df = pd.read_sql(query ,engine)
+        plt.figure(figsize=(16,4))         
+        colors = ['red','green','blue','black']
+        for i in range(len(money_name)):
 
-    df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
-    df = df.set_index('Date')
-    df1=df[name]
-
-    plt.figure(figsize=(16,4))
-    colors = ['red','green','blue','black']
-    for i in range(len(name)):
-        plt.subplot(2,2,i+1)
-        plt.plot(df1[name[i]]/df1[name[i]].loc[df.index[0]]*100,color=colors[i])
+            plt.subplot(2,2,i+1)
+            plt.plot(df1[money_name[i]]/df1[money_name[i]].loc[money_df.index[0]]*100,color=colors[i])
     
+            plt.legend(loc=0)
+            plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+            #plt.show()
+        
+    elif graph == 'program' :
+        program_name = ['차익', '비차익', '전체']
+        program_query = "select * from programtrend where Date >"+"'"+date+"'"
+        program_df = pd.read_sql(program_query ,engine)
+    
+        program_df.columns=['Date','차익', '비차익', '전체']
+        program_df = program_df.set_index('Date')
+        df1=program_df[program_name]
+        #return df1
+
+        plt.figure(figsize=(16,4))        
+        colors = ['red','green','blue','black']
+        for i in range(len(program_name)):
+
+            plt.subplot(2,2,i+1)
+            plt.plot(df1[program_name[i]],color=colors[i])
+        
+            plt.legend(loc=0)
+            plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+            #plt.show()
+            
+    elif graph == 'stock' :
+        name = input('주식이름을 입력하세요:').split()
+        #date = input("날짜를 입력하세요 sample: '2019-01-10':")
+        
+        select_query = "select Date,Close from market where Name= "
+        date_query = "Date > "
+    
+
+        tuple_name=tuple(name)
+        df1 = pd.DataFrame()
+    
+        for x in tuple_name:
+            var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
+            df = pd.read_sql(var ,engine)
+            df.columns=['Date',x]
+            if df1.empty:
+                df1 = df
+            else:
+                df1 = pd.merge (df,df1,on='Date')
+        df1=df1.set_index('Date')
+        plt.figure(figsize=(16,4))
+        for i in range(len(name)):
+            plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
+        
         plt.legend(loc=0)
         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-
 
 def excel_to_mysql():
 
