@@ -108,7 +108,7 @@ def get_graph():
         name = input('주식이름을 입력하세요:').split()
         #date = input("날짜를 입력하세요 sample: '2019-01-10':")
         
-        select_query = "select Date,Close from market where Name= "
+        select_query = "select Date,Volume,Close from market where Name= "
         date_query = "Date > "
     
 
@@ -118,7 +118,7 @@ def get_graph():
         for x in tuple_name:
             var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
             df = pd.read_sql(var ,engine)
-            df.columns=['Date',x]
+            df.columns=['Date',x+'거래량',x]
             if df1.empty:
                 df1 = df
             else:
@@ -128,9 +128,16 @@ def get_graph():
         for i in range(len(name)):
             plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
         
-        plt.legend(loc=0)
-        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+            plt.legend(loc=0)
+            plt.grid(True,color='0.7',linestyle=':',linewidth=1)
 
+        plt.figure(figsize=(16,4))
+        for i in range(len(name)):
+            plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100)
+        
+            plt.legend(loc=0)
+            plt.grid(True,color='0.7',linestyle=':',linewidth=1)        
+        
 def excel_to_mysql():
 
     file_name = input('파일이름을 입력하세요:')
@@ -505,7 +512,7 @@ class to_excel:
                     count += 1
                     
                     
-    def get_investor_trend(self):
+    def get_program_trend(self):
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
@@ -518,7 +525,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\investortrend.xlsx'
+        path = 'd:\\programtrend.xlsx'
 
         # 날짜를 받을 리스트
         date_list = []
@@ -580,7 +587,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
             
-    def get_investor_trend_date(self,until_date='1995-12-27'):
+    def get_program_trend_date(self,until_date='1995-12-27'):
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
@@ -593,7 +600,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\investortrend.xlsx'
+        path = 'd:\\programtrend.xlsx'
 
         until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
 
