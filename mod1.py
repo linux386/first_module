@@ -50,11 +50,12 @@ def stock_select_with_Volume_Close():
     df3['Close']=df3['today_Close']/df3['yester_Close']
     df3['Volume']=df3['today_Volume']/df3['yester_Volume']
     df3 = df3.sort_values(by=['Volume','Close'],ascending=False)
-    df3 = df3.reset_index(drop=True)
-    df3 = df3[:10]
     df4 = df3.sort_values(by=['Close','Volume'],ascending=False)
+    df3 = df3.reset_index(drop=True)
+
+    df3 = df3[:15]
     df4 = df4.reset_index(drop=True)
-    df4 = df4[:10]
+    df4 = df4[:15]
     display(df3)
     display(df4)
 
