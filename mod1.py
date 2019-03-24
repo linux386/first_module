@@ -125,6 +125,8 @@ def get_graph():
             else:
                 df1 = pd.merge (df,df1,on='Date')
         df1=df1.set_index('Date')
+        size = len(df1.index)
+        
         plt.figure(figsize=(16,4))
         for i in range(len(name)):
             plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
@@ -134,8 +136,9 @@ def get_graph():
 
         plt.figure(figsize=(16,4))
         for i in range(len(name)):
-            plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100)
-        
+            volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
+            plt.plot(df1[name[i]+'거래량']/volume_average)
+            #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
             plt.legend(loc=0)
             plt.grid(True,color='0.7',linestyle=':',linewidth=1)        
         
