@@ -20,6 +20,10 @@ from matplotlib import font_manager, rc
 font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
 rc('font', family=font_name)
 
+today = datetime.now()
+real_yesterday = (today-timedelta(1)).strftime('%Y-%m-%d')
+real_today = today.strftime('%Y-%m-%d')
+
 now = dt.datetime.today().strftime('%Y-%m-%d')
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
 conn = engine.connect()
@@ -27,8 +31,8 @@ conn = engine.connect()
 
 def stock_select_with_Volume_Close():
     
-    yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07'  ") 
-    today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ")
+    yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07'  ") or real_yesterday
+    today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ") or real_today
     
     select_query = "select * from market where Date >="
     volume_query = "&& Volume >  500000"
@@ -61,7 +65,7 @@ def stock_select_with_Volume_Close():
 
 def get_graph():
     graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock': ")
-    date = input("날짜를 입력하세요 sample: '2019-01-10':")
+    date = input("날짜를 입력하세요 sample: '2019-01-10':") or '2019-01-01'
     
     if graph == 'money' :
         money_name = ['kpi200', '거래량', '고객예탁금', '신용잔고']
@@ -312,7 +316,7 @@ class to_excel:
         path = 'd:\\moneytrend.xlsx'
 
     
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
     
         year = until_date.split('-')[0]
         mm = until_date.split('-')[1]
@@ -462,7 +466,7 @@ class to_excel:
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\kpi200.xlsx'
 
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
     
         year = until_date.split('-')[0]
         mm = until_date.split('-')[1]
@@ -606,7 +610,7 @@ class to_excel:
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\programtrend.xlsx'
 
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
 
         year = until_date.split('-')[0]
         mm = until_date.split('-')[1]
