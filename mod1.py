@@ -664,7 +664,8 @@ class to_excel:
                     
                     
     def get_program_trend(self):
-        url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+    
+        url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
@@ -677,22 +678,22 @@ class to_excel:
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\programtrend.xlsx'
-
+    
         # 날짜를 받을 리스트
         date_list = []
 
         # 값을 받을 사전
-        dictionary = {'개인': [],'외국인': [],'기관': []}
+        dictionary = {'차익': [],'비차익': [],'전체': []}
 
         # dictionary key 인덱싱을 위한 리스트
-        name_list = ['개인','외국인','기관']
+        name_list = ['차익','비차익','전체']
 
 
         # count mask
-        mask = [1,2,3]
+        mask = [3,6,9]
     
         for i in range(1,last+1):
-
+        
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
@@ -703,34 +704,34 @@ class to_excel:
             trs = body.find_all('tr')
 
             for tr in trs:
-                tds = tr.find_all('td',{'class':['date2','rate_down3','rate_up3']})
+                tds = tr.find_all('td',{'class':['date','rate_down','rate_up']})
                 count = 0
-
+    
                 for td in tds:
                     if count == 0:
                         date_ = td.text.strip().replace('.','-')
                         date_list.append(date_)
-
-
+                        
+                      
                     elif count in mask:
-                        temp = int(count-1)
+                        temp = int((count/3)-1)
                         dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
         
                     count += 1
-                if len(date_list) != len(dictionary['개인']):
+                if len(date_list) != len(dictionary['전체']):
                     print(str(i)+ '번째 페이지에서 누락된 값 발생')
                     print('누락된 데이터를 제거합니다')
-
+                    
                     date_list.pop(-1)
-                    dictionary['개인'].pop(-1)
-                    dictionary['외국인'].pop(-1)
-                    dictionary['기관'].pop(-1)
+                    dictionary['차익'].pop(-1)
+                    dictionary['비차익'].pop(-1)
+                    #dictionary['전체'].pop(-1)
                 
         # 개별 list 요소 갯수 파악 
-        #print(len(date_list))
-        #print(len(dictionary['개인']))
-        #print(len(dictionary['외국인']))
-        #print(len(dictionary['기관']))
+        print(len(date_list))
+        print(len(dictionary['차익']))
+        print(len(dictionary['비차익']))
+        print(len(dictionary['전체']))
 
         print(str(i) + '번째 페이지 크롤링 완료')
         df = pd.DataFrame(dictionary,index = date_list)
@@ -738,8 +739,9 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
             
-    def get_program_trend_date(self,until_date='1995-12-27'):
-        url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+    def get_program_trend_date(self,until_date='2000-12-27'):
+    
+        url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
@@ -753,29 +755,29 @@ class to_excel:
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\programtrend.xlsx'
 
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
-
+        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+    
         year = until_date.split('-')[0]
         mm = until_date.split('-')[1]
         dd = until_date.split('-')[2]
         year=year[2:]
         until_date = year+'-'+mm+'-'+dd
-
+    
         # 날짜를 받을 리스트
         date_list = []
 
         # 값을 받을 사전
-        dictionary = {'개인': [],'외국인': [],'기관': []}
+        dictionary = {'차익': [],'비차익': [],'전체': []}
 
         # dictionary key 인덱싱을 위한 리스트
-        name_list = ['개인','외국인','기관']
+        name_list = ['차익','비차익','전체']
 
 
         # count mask
-        mask = [1,2,3]
-
+        mask = [3,6,9]
+    
         for i in range(1,last+1):
-
+        
             source = urlopen(url+ str(i)).read()
             source = BeautifulSoup(source,'lxml')
 
@@ -786,9 +788,9 @@ class to_excel:
             trs = body.find_all('tr')
 
             for tr in trs:
-                tds = tr.find_all('td',{'class':['date2','rate_down3','rate_up3']})
+                tds = tr.find_all('td',{'class':['date','rate_down','rate_up']})
                 count = 0
-
+    
                 for td in tds:
                     if count == 0:
                         date_ = td.text.strip().replace('.','-')
@@ -800,9 +802,9 @@ class to_excel:
                         date_list.append(date_)
                         #print(date_list)
                     elif count in mask:
-                        temp = int(count-1)
+                        temp = int((count/3)-1)
                         dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
-
+                    
                     count += 1
             
             
