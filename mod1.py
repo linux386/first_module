@@ -28,149 +28,181 @@ now = dt.datetime.today().strftime('%Y-%m-%d')
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
 conn = engine.connect()
 
-
-def stock_select_with_Volume_Close():
+class to_report:
+    def stock_select_with_Volume_Close(self):
     
-    yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07'  ") or real_yesterday
-    today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ") or real_today
+        yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07'  ") or real_yesterday
+        today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ") or real_today
     
-    select_query = "select * from market where Date >="
-    volume_query = "&& Volume >  500000"
+        select_query = "select * from market where Date >="
+        volume_query = "&& Volume >  500000"
     
-    var = select_query +"'"+yesterday+"'"+ volume_query
-    df = pd.read_sql(var ,engine)
+        var = select_query +"'"+yesterday+"'"+ volume_query
+        df = pd.read_sql(var ,engine)
 
-    df1 = df[df['Date'].astype(str) == yesterday]
-    df1 = df1[['Name','Volume','Close']]
-    df1.columns = ['Name','yester_Volume','yester_Close']
-    #display(df1)
+        df1 = df[df['Date'].astype(str) == yesterday]
+        df1 = df1[['Name','Volume','Close']]
+        df1.columns = ['Name','yester_Volume','yester_Close']
+        #display(df1)
 
-    df2 = df[df['Date'].astype(str) == today]
-    df2 = df2[['Name','Volume','Close']]
-    df2.columns = ['Name','today_Volume','today_Close']
-    #display(df2)
+        df2 = df[df['Date'].astype(str) == today]
+        df2 = df2[['Name','Volume','Close']]
+        df2.columns = ['Name','today_Volume','today_Close']
+        #display(df2)
 
-    df3 = pd.merge(df1,df2,on='Name')
-    df3['Close']=df3['today_Close']/df3['yester_Close']
-    df3['Volume']=df3['today_Volume']/df3['yester_Volume']
-    df3 = df3.sort_values(by=['Volume','Close'],ascending=False)
-    df4 = df3.sort_values(by=['Close','Volume'],ascending=False)
-    df3 = df3.reset_index(drop=True)
+        df3 = pd.merge(df1,df2,on='Name')
+        df3['Close']=df3['today_Close']/df3['yester_Close']
+        df3['Volume']=df3['today_Volume']/df3['yester_Volume']
+        df3 = df3.sort_values(by=['Volume','Close'],ascending=False)
+        df4 = df3.sort_values(by=['Close','Volume'],ascending=False)
+        df3 = df3.reset_index(drop=True)
 
-    df3 = df3[:15]
-    df4 = df4.reset_index(drop=True)
-    df4 = df4[:15]
-    display(df3)
-    display(df4)
+        df3 = df3[:15]
+        df4 = df4.reset_index(drop=True)
+        df4 = df4[:15]
+        display(df3)
+        display(df4)
 
-def get_graph():
-    graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock': ")
-    date = input("날짜를 입력하세요 sample: '2019-01-10':") or '2019-01-01'
+    def get_graph(self):
+        graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock': ")
+        date = input("날짜를 입력하세요 sample: '2019-01-10':") or '2019-01-01'
     
-    if graph == 'money' :
-        money_name = ['kpi200', '거래량', '고객예탁금', '신용잔고']
-        money_query = "select * from kpi_with_money where Date >"+"'"+date+"'"
-        money_df = pd.read_sql(money_query ,engine)
+        if graph == 'money' :
+            money_name = ['kpi200', '거래량', '고객예탁금', '신용잔고']
+            money_query = "select * from kpi_with_money where Date >"+"'"+date+"'"
+            money_df = pd.read_sql(money_query ,engine)
         
-        money_df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
-        money_df = money_df.set_index('Date')
-        df1 = money_df[money_name]
-        #return df1
+            money_df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
+            money_df = money_df.set_index('Date')
+            df1 = money_df[money_name]
+            #return df1
 
-        plt.figure(figsize=(16,4))         
-        colors = ['red','green','blue','black']
-        for i in range(len(money_name)):
-
-            plt.subplot(2,2,i+1)
-            plt.plot(df1[money_name[i]]/df1[money_name[i]].loc[money_df.index[0]]*100,color=colors[i])
-    
-            plt.legend(loc=0)
-            plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-            #plt.show()
+            plt.figure(figsize=(16,4))         
+            colors = ['red','green','blue','black']
+            for i in range(len(money_name)):
+                plt.subplot(2,2,i+1)
+                plt.plot(df1[money_name[i]]/df1[money_name[i]].loc[money_df.index[0]]*100, color=colors[i])
+                plt.legend(loc=0)
+                plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                #plt.show()
         
-    elif graph == 'program' :
-        program_name = ['차익', '비차익', '전체']
-        program_query = "select * from programtrend where Date >"+"'"+date+"'"
-        program_df = pd.read_sql(program_query ,engine)
+        elif graph == 'program' :
+            program_name = ['차익', '비차익', '전체']
+            program_query = "select * from programtrend where Date >"+"'"+date+"'"
+            program_df = pd.read_sql(program_query ,engine)
     
-        program_df.columns=['Date','차익', '비차익', '전체']
-        program_df = program_df.set_index('Date')
-        df1=program_df[program_name]
-        #return df1
+            program_df.columns=['Date','차익', '비차익', '전체']
+            program_df = program_df.set_index('Date')
+            df1=program_df[program_name]
+            #return df1
 
-        plt.figure(figsize=(16,4))        
-        colors = ['red','green','blue','black']
-        for i in range(len(program_name)):
+            plt.figure(figsize=(16,4))        
+            colors = ['red','green','blue','black']
+            for i in range(len(program_name)):
 
-            plt.subplot(2,2,i+1)
-            plt.plot(df1[program_name[i]],color=colors[i])
+                plt.subplot(2,2,i+1)
+                plt.plot(df1[program_name[i]],color=colors[i])
         
-            plt.legend(loc=0)
-            plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-            #plt.show()
+                plt.legend(loc=0)
+                plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                #plt.show()
             
-    elif graph == 'stock' :
-        name = input('주식이름을 입력하세요:').split()
-        #date = input("날짜를 입력하세요 sample: '2019-01-10':")
+        elif graph == 'stock' :
+            name = input('주식이름을 입력하세요:').split()
+            #date = input("날짜를 입력하세요 sample: '2019-01-10':")
         
-        select_query = "select Date,Volume,Close from market where Name= "
-        date_query = "Date > "
+            select_query = "select Date,Volume,Close from market where Name= "
+            date_query = "Date > "
     
 
-        tuple_name=tuple(name)
-        df1 = pd.DataFrame()
+            tuple_name=tuple(name)
+            df1 = pd.DataFrame()
     
-        for x in tuple_name:
-            var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
-            df = pd.read_sql(var ,engine)
-            df.columns=['Date',x+'거래량',x]
-            if df1.empty:
-                df1 = df
-            else:
-                df1 = pd.merge (df,df1,on='Date')
-        df1=df1.set_index('Date')
-        size = len(df1.index)
+            for x in tuple_name:
+                var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
+                df = pd.read_sql(var ,engine)
+                df.columns=['Date',x+'거래량',x]
+                if df1.empty:
+                    df1 = df
+                else:
+                    df1 = pd.merge (df,df1,on='Date')
+            df1=df1.set_index('Date')
+            size = len(df1.index)
         
-        plt.figure(figsize=(16,4))
-        for i in range(len(name)):
-            plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
+            plt.figure(figsize=(16,4))
+            for i in range(len(name)):
+                plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
         
-            plt.legend(loc=0)
-            plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                plt.legend(loc=0)
+                plt.grid(True,color='0.7',linestyle=':',linewidth=1)
 
-        plt.figure(figsize=(16,4))
-        for i in range(len(name)):
-            volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
-            plt.plot(df1[name[i]+'거래량']/volume_average)
-            #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
-            plt.legend(loc=0)
-            plt.grid(True,color='0.7',linestyle=':',linewidth=1)        
-        
-def excel_to_mysql():
+            plt.figure(figsize=(16,4))
+            for i in range(len(name)):
+                volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
+                plt.plot(df1[name[i]+'거래량']/volume_average)
+                #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
+                plt.legend(loc=0)
+                plt.grid(True,color='0.7',linestyle=':',linewidth=1)        
 
-    file_name = input('파일이름을 입력하세요:')
+class to_sql:
+    
+    def excel_to_mysql(self):
+
+        file_name = input('파일이름을 입력하세요:')
         
-    df=pd.read_excel('d:\\'+ file_name)
-    if file_name=='kpi200.xlsx':
-        df.columns=['Date','kpi200','거래량']
-        table_name = 'kpi200'
+        df=pd.read_excel('d:\\'+ file_name)
+        if file_name=='kpi200.xlsx':
+            df.columns=['Date','kpi200','거래량']
+            table_name = 'kpi200'
  
-    elif file_name=='investortrend.xlsx':
-        table_name = 'investortrend'
-        df.columns=['Date', '개인', '외국인','기관']
+        elif file_name=='investortrend.xlsx':
+            table_name = 'investortrend'
+            df.columns=['Date', '개인', '외국인','기관']
         
-    elif file_name=='moneytrend.xlsx':
-        table_name = 'moneytrend'
-        df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
+        elif file_name=='moneytrend.xlsx':
+            table_name = 'moneytrend'
+            df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
         
-    elif file_name=='programtrend.xlsx':
-        table_name = 'programtrend'
-        df.columns=['Date', '차익', '비차익','전체']
+        elif file_name=='programtrend.xlsx':
+            table_name = 'programtrend'
+            df.columns=['Date', '차익', '비차익','전체']
         
-    elif file_name=='market.xlsx':
-        data = pd.read_excel('d:\\market.xlsx')
-        start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
+        elif file_name=='market.xlsx':
+            data = pd.read_excel('d:\\market.xlsx')
+            start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
 
+            code_list = data['종목코드'].tolist()
+            code_list = [str(item).zfill(6) for item in code_list]
+            name_list = data['종목명'].tolist()
+
+            # 코스피 상장종목 전체
+            stock_dic = dict(list(zip(code_list,name_list)))
+
+            for code in sorted(stock_dic.keys()):
+                df  = fdr.DataReader(code,start_date)
+                print(code,stock_dic[code])
+                df['Code'],df['Name'] = code,stock_dic[code]
+                df = df[['Code','Name','Open','High','Low','Volume','Close']]
+                df.to_sql(name='market', con=engine, if_exists='append')
+            return 
+    
+        else:
+            print('\n file_name error\n')
+    
+        df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
+
+        print(df)
+
+
+    def get_stock_price_from_fdr(self, end_date=now):
+        
+        file_name = input('파일이름을 입력하세요:')
+        toward = input('저장 방식을 입력하세요 : sample: excel, sql ')
+        start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
+        table_name = input("table명을 입력하세요 : sample: market")
+    
+        data=pd.read_excel('d:\\'+ file_name)
+   
         code_list = data['종목코드'].tolist()
         code_list = [str(item).zfill(6) for item in code_list]
         name_list = data['종목명'].tolist()
@@ -179,46 +211,14 @@ def excel_to_mysql():
         stock_dic = dict(list(zip(code_list,name_list)))
 
         for code in sorted(stock_dic.keys()):
-            df  = fdr.DataReader(code,start_date)
+            df  = fdr.DataReader(code,start_date,now)
             print(code,stock_dic[code])
             df['Code'],df['Name'] = code,stock_dic[code]
             df = df[['Code','Name','Open','High','Low','Volume','Close']]
-            df.to_sql(name='market', con=engine, if_exists='append')
-        return 
-    
-    else:
-        print('\n file_name error\n')
-    
-    df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
-
-    print(df)
-
-
-def get_stock_price_from_fdr(end_date=now):
-        
-    file_name = input('파일이름을 입력하세요:')
-    toward = input('저장 방식을 입력하세요 : sample: excel, sql ')
-    start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
-    table_name = input("table명을 입력하세요 : sample: market")
-    
-    data=pd.read_excel('d:\\'+ file_name)
-   
-    code_list = data['종목코드'].tolist()
-    code_list = [str(item).zfill(6) for item in code_list]
-    name_list = data['종목명'].tolist()
-
-    # 코스피 상장종목 전체
-    stock_dic = dict(list(zip(code_list,name_list)))
-
-    for code in sorted(stock_dic.keys()):
-        df  = fdr.DataReader(code,start_date,now)
-        print(code,stock_dic[code])
-        df['Code'],df['Name'] = code,stock_dic[code]
-        df = df[['Code','Name','Open','High','Low','Volume','Close']]
-        if toward == 'excel':
-            df.to_excel('d:\\data_set\\kospi\\'+ stock_dic[code] +'.xlsx',engine = 'xlsxwriter')
-        elif toward == 'sql':
-            df.to_sql(name=table_name, con=engine, if_exists='append')
+            if toward == 'excel':
+                df.to_excel('d:\\data_set\\kospi\\'+ stock_dic[code] +'.xlsx',engine = 'xlsxwriter')
+            elif toward == 'sql':
+                df.to_sql(name=table_name, con=engine, if_exists='append')
         
 
 class to_excel:
