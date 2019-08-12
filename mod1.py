@@ -146,7 +146,7 @@ class to_report:
 
 class to_sql:
     
-    def excel_to_mysql(self):
+    def excel_to_sql(self):
 
         file_name = input('파일이름을 입력하세요:')
         
