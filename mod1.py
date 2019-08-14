@@ -295,6 +295,7 @@ class to_excel:
         print(str(i) + '번째 페이지 크롤링 완료')
         df = pd.DataFrame(dictionary,index = date_list)
         df = df.sort_index()
+        df = df[['개인','외국인','기관']]
         df.to_excel(path, encoding='utf-8')
         print(df)
         
@@ -356,6 +357,7 @@ class to_excel:
                         if date_ <=  until_date :
                             df = pd.DataFrame(dictionary,index = date_list)
                             df = df.sort_index()
+                            df = df[['개인','외국인','기관']]
                             df.to_excel(path, encoding='utf-8')
                             return df   
                         date_list.append(date_)
