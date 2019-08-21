@@ -298,12 +298,8 @@ class to_excel:
         df = df[['개인','외국인','기관']]
         df.to_excel(path, encoding='utf-8')
         print(df)
-        
-<<<<<<< HEAD
-    def get_investortrend_date(self,until_date='2000-12-27'):
-=======
+
     def get_investor_trend_date(self,until_date=real_yesterday,type=1):
->>>>>>> 43fa88319f0c00e1d52e58241e1aab1766d2149e
     
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
 
@@ -777,12 +773,8 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
             
-<<<<<<< HEAD
-    def get_programtrend_date(self,until_date='2000-12-27'):
-=======
     def get_program_trend_date(self,until_date=real_yesterday, type=1):
->>>>>>> 43fa88319f0c00e1d52e58241e1aab1766d2149e
-    
+
         url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
