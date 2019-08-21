@@ -299,7 +299,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
         
-    def get_investor_trend_date(self,until_date='2000-12-27'):
+    def get_investor_trend_date(self,until_date=real_yesterday,type=1):
     
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
 
@@ -314,14 +314,25 @@ class to_excel:
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\investortrend.xlsx'
+        
+        if type == 1:
+            until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
 
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
     
-        year = until_date.split('-')[0]
-        mm = until_date.split('-')[1]
-        dd = until_date.split('-')[2]
-        year=year[2:]
-        until_date = year+'-'+mm+'-'+dd
+        else:
+            until_date = real_yesterday
+
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
+    
     
         # 날짜를 받을 리스트
         date_list = []
@@ -368,7 +379,7 @@ class to_excel:
                     
                     count += 1
     
-    def get_moneytrend(self):
+    def get_money_trend(self):
     
         url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
 
@@ -445,7 +456,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
 
-    def get_moneytrend_date(self,until_date='2000-12-27'):
+    def get_money_trend_date(self,until_date=real_today,type=1):
         
         url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
 
@@ -461,13 +472,23 @@ class to_excel:
         path = 'd:\\moneytrend.xlsx'
 
     
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
+        if type == 1:
+            until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
+
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
     
-        year = until_date.split('-')[0]
-        mm = until_date.split('-')[1]
-        dd = until_date.split('-')[2]
-        year=year[2:]
-        until_date = year+'-'+mm+'-'+dd
+        else:
+            until_date = real_today
+
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
     
         #df = DataFrame(columns = ['고객예탁금', '신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드'])
 
@@ -595,7 +616,7 @@ class to_excel:
         print(df)
        
 
-    def get_kpi200_date(self,until_date='2000-12-27'):
+    def get_kpi200_date(self,until_date=real_yesterday,type=1):
     
         url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
 
@@ -611,13 +632,23 @@ class to_excel:
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\kpi200.xlsx'
 
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
+        if type == 1:
+            until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
+
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            #year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
     
-        year = until_date.split('-')[0]
-        mm = until_date.split('-')[1]
-        dd = until_date.split('-')[2]
-        #year=year[2:]
-        until_date = year+'-'+mm+'-'+dd
+        else:
+            until_date = real_yesterday
+
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            #year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
     
         # 날짜를 받을 리스트
         date_list = []
@@ -742,7 +773,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
             
-    def get_program_trend_date(self,until_date='2000-12-27'):
+    def get_program_trend_date(self,until_date=real_yesterday, type=1):
     
         url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
 
@@ -758,13 +789,23 @@ class to_excel:
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\programtrend.xlsx'
 
-        until_date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+        if type == 1:
+            until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
+
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
     
-        year = until_date.split('-')[0]
-        mm = until_date.split('-')[1]
-        dd = until_date.split('-')[2]
-        year=year[2:]
-        until_date = year+'-'+mm+'-'+dd
+        else:
+            until_date = real_yesterday
+
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
     
         # 날짜를 받을 리스트
         date_list = []
