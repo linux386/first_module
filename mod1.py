@@ -223,7 +223,7 @@ class to_sql:
 
 class to_excel:
     
-    def get_investor_trend(self):
+    def get_investortrend(self):
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
@@ -299,7 +299,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
         
-    def get_investor_trend_date(self,until_date='2000-12-27'):
+    def get_investortrend_date(self,until_date='2000-12-27'):
     
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
 
@@ -665,7 +665,7 @@ class to_excel:
                     count += 1
                     
                     
-    def get_program_trend(self):
+    def get_programtrend(self):
     
         url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
 
@@ -742,7 +742,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
             
-    def get_program_trend_date(self,until_date='2000-12-27'):
+    def get_programtrend_date(self,until_date='2000-12-27'):
     
         url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
 
