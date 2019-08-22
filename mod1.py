@@ -146,54 +146,73 @@ class to_report:
 
 class to_sql:
     
-    def excel_to_sql(self):
+    def excel_to_sql(self, type = 1):
+        excel_name_list=['kpi200.xlsx', 'investortrend.xlsx','programtrend.xlsx','moneytrend.xlsx']
+        sql_table_name_list=['kpi200','investortrend','programtrend','moneytrend']
 
-        file_name = input('파일이름을 입력하세요:')
+        if type == 1:
         
-        df=pd.read_excel('d:\\'+ file_name)
-        if file_name=='kpi200.xlsx':
-            df.columns=['Date','kpi200','거래량']
-            table_name = 'kpi200'
- 
-        elif file_name=='investortrend.xlsx':
-            table_name = 'investortrend'
-            df.columns=['Date', '개인', '외국인','기관']
-        
-        elif file_name=='moneytrend.xlsx':
-            table_name = 'moneytrend'
-            df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
-        
-        elif file_name=='programtrend.xlsx':
-            table_name = 'programtrend'
-            df.columns=['Date', '차익', '비차익','전체']
-        
-        elif file_name=='market.xlsx':
-            data = pd.read_excel('d:\\market.xlsx')
-            start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
+            file_name = input('파일이름을 입력하세요:')
 
-            code_list = data['종목코드'].tolist()
-            code_list = [str(item).zfill(6) for item in code_list]
-            name_list = data['종목명'].tolist()
+            df=pd.read_excel('d:\\'+ file_name)
+            if file_name=='kpi200.xlsx':
+                table_name = 'kpi200'
+                df.columns=['Date','kpi200','거래량']
 
-            # 코스피 상장종목 전체
-            stock_dic = dict(list(zip(code_list,name_list)))
+            elif file_name=='investortrend.xlsx':
+                table_name = 'investortrend'
+                df.columns=['Date', '개인', '외국인','기관']
 
-            for code in sorted(stock_dic.keys()):
-                df  = fdr.DataReader(code,start_date)
-                print(code,stock_dic[code])
-                df['Code'],df['Name'] = code,stock_dic[code]
-                df = df[['Code','Name','Open','High','Low','Volume','Close']]
-                df.to_sql(name='market', con=engine, if_exists='append')
-            return 
-    
-        else:
-            print('\n file_name error\n')
-    
-        df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
+            elif file_name=='moneytrend.xlsx':
+                table_name = 'moneytrend'
+                df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
 
-        print(df)
+            elif file_name=='programtrend.xlsx':
+                table_name = 'programtrend'
+                df.columns=['Date', '차익', '비차익','전체']
 
+            elif file_name=='market.xlsx':
+                data = pd.read_excel('d:\\market.xlsx')
+                start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
 
+                code_list = data['종목코드'].tolist()
+                code_list = [str(item).zfill(6) for item in code_list]
+                name_list = data['종목명'].tolist()
+
+                # 코스피 상장종목 전체
+                stock_dic = dict(list(zip(code_list,name_list)))
+
+                for code in sorted(stock_dic.keys()):
+                    df  = fdr.DataReader(code,start_date)
+                    print(code,stock_dic[code])
+                    df['Code'],df['Name'] = code,stock_dic[code]
+                    df = df[['Code','Name','Open','High','Low','Volume','Close']]
+                    df.to_sql(name='market', con=engine, if_exists='append')
+                return 
+
+            else:
+                print('\n file_name error\n')
+
+            df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
+
+            print(df)
+            
+        else :
+            a = 0
+            for i in excel_name_list:
+
+                table_name = sql_table_name_list[a]
+                df=pd.read_excel('d:\\'+ i)
+                print(table_name)
+                #print(df.columns)
+                #print(df['Unnamed: 0'])
+                df = df.rename(columns = {'Unnamed: 0': 'Date'})
+                df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
+
+                print(df)
+                a += 1
+                
+    ###  fdr을 통해 별도로 data수집
     def get_stock_price_from_fdr(self, end_date=now):
         
         file_name = input('파일이름을 입력하세요:')
