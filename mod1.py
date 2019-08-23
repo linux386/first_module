@@ -344,7 +344,9 @@ class to_excel:
             until_date = year+'-'+mm+'-'+dd
     
         else:
-            until_date = real_yesterday
+            kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 1", engine)
+            kpi200_df = str(kpi200_df['Date'])
+            until_date = kpi200_df[5:15]
 
             year = until_date.split('-')[0]
             mm = until_date.split('-')[1]
@@ -417,10 +419,10 @@ class to_excel:
         date_list = []
 
         # 값을 받을 사전
-        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형 펀드': [],'혼합형 펀드': [],'채권형 펀드': []}
+        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형펀드': [],'혼합형펀드': [],'채권형펀드': []}
 
         # dictionary key 인덱싱을 위한 리스트
-        name_list = ['고객예탁금','신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드']
+        name_list = ['고객예탁금','신용잔고','주식형펀드','혼합형펀드','채권형펀드']
 
 
         # count mask
@@ -452,15 +454,15 @@ class to_excel:
                         dictionary[name_list[temp]].append(td.text.strip().replace(',',''))
         
                     count += 1
-                if len(dictionary['고객예탁금']) != len(dictionary['채권형 펀드']):
+                if len(dictionary['고객예탁금']) != len(dictionary['채권형펀드']):
                     print(str(i)+ '번째 페이지에서 누락된 값 발생')
                     print('누락된 데이터를 제거합니다')
                     
                     date_list.pop(-1)
                     dictionary['고객예탁금'].pop(-1)
                     dictionary['신용잔고'].pop(-1)
-                    dictionary['주식형 펀드'].pop(-1)
-                    dictionary['혼합형 펀드'].pop(-1)
+                    dictionary['주식형펀드'].pop(-1)
+                    dictionary['혼합형펀드'].pop(-1)
                 
         # 개별 list 요소 갯수 파악 
         #print(len(date_list))
@@ -501,7 +503,9 @@ class to_excel:
             until_date = year+'-'+mm+'-'+dd
     
         else:
-            until_date = real_today
+            moneytrend_df = pd.read_sql("select Date from moneytrend order by Date desc limit 1", engine)
+            moneytrend_df = str(moneytrend_df['Date'])
+            until_date = moneytrend_df[5:15]
 
             year = until_date.split('-')[0]
             mm = until_date.split('-')[1]
@@ -516,10 +520,10 @@ class to_excel:
 
     
         # 값을 받을 사전
-        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형 펀드': [],'혼합형 펀드': [],'채권형 펀드': []}
+        dictionary = {'고객예탁금': [],'신용잔고': [],'주식형펀드': [],'혼합형펀드': [],'채권형펀드': []}
 
         # dictionary key 인덱싱을 위한 리스트
-        name_list = ['고객예탁금','신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드']
+        name_list = ['고객예탁금','신용잔고','주식형펀드','혼합형펀드','채권형펀드']
 
 
         # count mask
@@ -661,7 +665,9 @@ class to_excel:
             until_date = year+'-'+mm+'-'+dd
     
         else:
-            until_date = real_yesterday
+            kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 1", engine)
+            kpi200_df = str(kpi200_df['Date'])
+            until_date = kpi200_df[5:15]
 
             year = until_date.split('-')[0]
             mm = until_date.split('-')[1]
@@ -818,7 +824,9 @@ class to_excel:
             until_date = year+'-'+mm+'-'+dd
     
         else:
-            until_date = real_yesterday
+            programtrend_df = pd.read_sql("select Date from programtrend order by Date desc limit 1", engine)
+            programtrend_df = str(programtrend_df['Date'])
+            until_date = programtrend_df[5:15]
 
             year = until_date.split('-')[0]
             mm = until_date.split('-')[1]
