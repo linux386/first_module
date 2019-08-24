@@ -29,11 +29,17 @@ engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stoc
 conn = engine.connect()
 
 class to_report:
-    def stock_select_with_Volume_Close(self):
+    def stock_select_with_Volume_Close(self,type = 1):
     
-        yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07'  ") or real_yesterday
-        today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ") or real_today
-    
+        if type == 1:
+            yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07'  ") or real_yesterday
+            today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ") or real_today
+        
+        else:
+            kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 2", engine)
+            yesterday = df1 = str(kpi200_df['Date'][1])
+            today = str(kpi200_df['Date'][0])
+            
         select_query = "select * from market where Date >="
         volume_query = "&& Volume >  500000"
     
@@ -60,89 +66,184 @@ class to_report:
         df3 = df3[:15]
         df4 = df4.reset_index(drop=True)
         df4 = df4[:15]
+        df3.to_excel('d:\\detect_stock_with_volume.xlsx', encoding='utf-8')
+        df4.to_excel('d:\\detect_stock_with_price.xlsx', encoding='utf-8')        
         display(df3)
         display(df4)
 
-    def get_graph(self):
-        graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock': ")
-        date = input("날짜를 입력하세요 sample: '2019-01-10':") or '2019-01-01'
-    
-        if graph == 'money' :
-            money_name = ['kpi200', '거래량', '고객예탁금', '신용잔고']
-            money_query = "select * from kpi_with_money where Date >"+"'"+date+"'"
-            money_df = pd.read_sql(money_query ,engine)
-        
-            money_df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
-            money_df = money_df.set_index('Date')
-            df1 = money_df[money_name]
-            #return df1
+    def get_graph(self, type=1):
+        graph_name_list=['stock','money', 'program']
+        date='2019-01-01'
 
-            plt.figure(figsize=(16,4))         
-            colors = ['red','green','blue','black']
-            for i in range(len(money_name)):
-                plt.subplot(2,2,i+1)
-                plt.plot(df1[money_name[i]]/df1[money_name[i]].loc[money_df.index[0]]*100, color=colors[i])
-                plt.legend(loc=0)
-                plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-                #plt.show()
-        
-        elif graph == 'program' :
-            program_name = ['차익', '비차익', '전체']
-            program_query = "select * from programtrend where Date >"+"'"+date+"'"
-            program_df = pd.read_sql(program_query ,engine)
-    
-            program_df.columns=['Date','차익', '비차익', '전체']
-            program_df = program_df.set_index('Date')
-            df1=program_df[program_name]
-            #return df1
+        if type == 1:
+            graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock': ")
+            date = input("날짜를 입력하세요 sample: '2019-01-10':") or '2019-01-01'
 
-            plt.figure(figsize=(16,4))        
-            colors = ['red','green','blue','black']
-            for i in range(len(program_name)):
+            if graph == 'money' :
+                money_name = ['kpi200', '거래량', '고객예탁금', '신용잔고']
+                money_query = "select * from kpi_with_money where Date >"+"'"+date+"'"
+                money_df = pd.read_sql(money_query ,engine)
 
-                plt.subplot(2,2,i+1)
-                plt.plot(df1[program_name[i]],color=colors[i])
-        
-                plt.legend(loc=0)
-                plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-                #plt.show()
-            
-        elif graph == 'stock' :
-            name = input('주식이름을 입력하세요:').split()
-            #date = input("날짜를 입력하세요 sample: '2019-01-10':")
-        
-            select_query = "select Date,Volume,Close from market where Name= "
-            date_query = "Date > "
-    
+                money_df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
+                money_df = money_df.set_index('Date')
+                df1 = money_df[money_name]
+                #return df1
 
-            tuple_name=tuple(name)
-            df1 = pd.DataFrame()
-    
-            for x in tuple_name:
-                var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
-                df = pd.read_sql(var ,engine)
-                df.columns=['Date',x+'거래량',x]
-                if df1.empty:
-                    df1 = df
-                else:
-                    df1 = pd.merge (df,df1,on='Date')
-            df1=df1.set_index('Date')
-            size = len(df1.index)
-        
-            plt.figure(figsize=(16,4))
-            for i in range(len(name)):
-                plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
-        
-                plt.legend(loc=0)
-                plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                plt.figure(figsize=(16,4))         
+                colors = ['red','green','blue','black']
+                for i in range(len(money_name)):
+                    plt.subplot(2,2,i+1)
+                    plt.plot(df1[money_name[i]]/df1[money_name[i]].loc[money_df.index[0]]*100, color=colors[i])
+                    plt.legend(loc=0)
+                    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                    #plt.show()
 
-            plt.figure(figsize=(16,4))
-            for i in range(len(name)):
-                volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
-                plt.plot(df1[name[i]+'거래량']/volume_average)
-                #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
-                plt.legend(loc=0)
-                plt.grid(True,color='0.7',linestyle=':',linewidth=1)        
+            elif graph == 'program' :
+                program_name = ['차익', '비차익', '전체']
+                program_query = "select * from programtrend where Date >"+"'"+date+"'"
+                program_df = pd.read_sql(program_query ,engine)
+
+                program_df.columns=['Date','차익', '비차익', '전체']
+                program_df = program_df.set_index('Date')
+                df1=program_df[program_name]
+                #return df1
+
+                plt.figure(figsize=(16,4))        
+                colors = ['red','green','blue','black']
+                for i in range(len(program_name)):
+
+                    plt.subplot(2,2,i+1)
+                    plt.plot(df1[program_name[i]],color=colors[i])
+
+                    plt.legend(loc=0)
+                    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                    #plt.show()
+
+            elif graph == 'stock' :
+                name = input('주식이름을 입력하세요:').split()
+                #date = input("날짜를 입력하세요 sample: '2019-01-10':")
+
+                select_query = "select Date,Volume,Close from market where Name= "
+                date_query = "Date > "
+
+
+                tuple_name=tuple(name)
+                df1 = pd.DataFrame()
+
+                for x in tuple_name:
+                    var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
+                    df = pd.read_sql(var ,engine)
+                    df.columns=['Date',x+'거래량',x]
+                    if df1.empty:
+                        df1 = df
+                    else:
+                        df1 = pd.merge (df,df1,on='Date')
+                df1=df1.set_index('Date')
+                size = len(df1.index)
+
+                plt.figure(figsize=(16,4))
+                for i in range(len(name)):
+                    plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
+
+                    plt.legend(loc=0)
+                    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+
+                plt.figure(figsize=(16,4))
+                for i in range(len(name)):
+                    volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
+                    plt.plot(df1[name[i]+'거래량']/volume_average)
+                    #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
+                    plt.legend(loc=0)
+                    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+            else : 
+                print('\n input error\n')
+
+                
+        else :
+            for i in graph_name_list:
+                if i == 'money' :
+                    money_name = ['kpi200', '거래량', '고객예탁금', '신용잔고']
+                    money_query = "select * from kpi_with_money where Date >"+"'"+date+"'"
+                    money_df = pd.read_sql(money_query ,engine)
+
+                    money_df.columns=['Date','kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드']
+                    money_df = money_df.set_index('Date')
+                    df1 = money_df[money_name]
+                    #return df1
+
+                    plt.figure(figsize=(16,4))         
+                    colors = ['red','green','blue','black']
+                    for i in range(len(money_name)):
+                        plt.subplot(2,2,i+1)
+                        plt.plot(df1[money_name[i]]/df1[money_name[i]].loc[money_df.index[0]]*100, color=colors[i])
+                        plt.legend(loc=0)
+                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                        #plt.show()
+
+                elif i == 'program' :
+                    program_name = ['차익', '비차익', '전체']
+                    program_query = "select * from programtrend where Date >"+"'"+date+"'"
+                    program_df = pd.read_sql(program_query ,engine)
+
+                    program_df.columns=['Date','차익', '비차익', '전체']
+                    program_df = program_df.set_index('Date')
+                    df1=program_df[program_name]
+                    #return df1
+
+                    plt.figure(figsize=(16,4))        
+                    colors = ['red','green','blue','black']
+                    for i in range(len(program_name)):
+
+                        plt.subplot(2,2,i+1)
+                        plt.plot(df1[program_name[i]],color=colors[i])
+
+                        plt.legend(loc=0)
+                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                        #plt.show()
+                        
+                elif i == 'stock' :
+                    name = pd.read_excel('d:\\detect_stock_with_volume.xlsx', encoding='utf-8')
+                    name = name[:5]
+                    name = name['Name']
+                    name = name.to_list()
+                    #df.values[0]
+                    #name = input('주식이름을 입력하세요:').split()
+                    #date = input("날짜를 입력하세요 sample: '2019-01-10':")
+
+                    select_query = "select Date,Volume,Close from market where Name= "
+                    date_query = "Date > "
+
+
+                    tuple_name=tuple(name)
+                    df1 = pd.DataFrame()
+
+                    for x in tuple_name:
+                        var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
+                        df = pd.read_sql(var ,engine)
+                        df.columns=['Date',x+'거래량',x]
+                        if df1.empty:
+                            df1 = df
+                        else:
+                            df1 = pd.merge (df,df1,on='Date')
+                    df1=df1.set_index('Date')
+                    size = len(df1.index)
+
+                    plt.figure(figsize=(16,4))
+                    for i in range(len(name)):
+                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
+
+                        plt.legend(loc=0)
+                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+
+                    plt.figure(figsize=(16,4))
+                    for i in range(len(name)):
+                        volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
+                        plt.plot(df1[name[i]+'거래량']/volume_average)
+                        #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
+                        plt.legend(loc=0)
+                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                else : 
+                    print('\n input error\n')       
 
 class to_sql:
     
