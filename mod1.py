@@ -248,8 +248,8 @@ class to_report:
 class to_sql:
     
     def excel_to_sql(self, type = 1):
-        excel_name_list=['kpi200.xlsx', 'investortrend.xlsx','programtrend.xlsx','moneytrend.xlsx']
-        sql_table_name_list=['kpi200','investortrend','programtrend','moneytrend']
+        excel_name_list=['kpi200.xlsx', 'investortrend.xlsx','programtrend.xlsx','moneytrend.xlsx','market.xlsx']
+        sql_table_name_list=['kpi200','investortrend','programtrend','moneytrend','market.xlsx']
 
         if type == 1:
         
@@ -315,7 +315,7 @@ class to_sql:
                     
                     #year=year[2:]
                     start_date = year+'-'+mm+'-'+dd
-                    print('start_date:{}'.format(start_date))
+                    print('\n market start_date:{}'.format(start_date))
 
                     code_list = data['종목코드'].tolist()
                     code_list = [str(item).zfill(6) for item in code_list]
