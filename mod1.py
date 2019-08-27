@@ -301,17 +301,48 @@ class to_sql:
         else :
             a = 0
             for i in excel_name_list:
+                if i == 'market.xlsx':
+                    data = pd.read_excel('d:\\market.xlsx')
+                    market_df = pd.read_sql("select Date from market order by Date desc limit 1", engine)
+                    market_df = str(market_df['Date'])
+                    print(market_df)
+                    start_date =  market_df[5:15]
+                    year = start_date.split('-')[0]
+                    mm = start_date.split('-')[1]
+                    dd = start_date.split('-')[2]
+                    dd = int(dd)+1
+                    dd = str(dd)
+                    
+                    #year=year[2:]
+                    start_date = year+'-'+mm+'-'+dd
+                    print('start_date:{}'.format(start_date))
 
-                table_name = sql_table_name_list[a]
-                df=pd.read_excel('d:\\'+ i)
-                print(table_name)
-                #print(df.columns)
-                #print(df['Unnamed: 0'])
-                df = df.rename(columns = {'Unnamed: 0': 'Date'})
-                df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
+                    code_list = data['종목코드'].tolist()
+                    code_list = [str(item).zfill(6) for item in code_list]
+                    name_list = data['종목명'].tolist()
 
-                print(df)
+                    # 코스피 상장종목 전체
+                    stock_dic = dict(list(zip(code_list,name_list)))
+
+                    for code in sorted(stock_dic.keys()):
+                        df  = fdr.DataReader(code,start_date)
+                        print(code,stock_dic[code])
+                        df['Code'],df['Name'] = code,stock_dic[code]
+                        df = df[['Code','Name','Open','High','Low','Volume','Close']]
+                        #df
+                        df.to_sql(name='market', con=engine, if_exists='append')
+                    return 
+                else :
+                    table_name = sql_table_name_list[a]
+                    df=pd.read_excel('d:\\'+ i)
+                    print(table_name)
+                    df = df.rename(columns = {'Unnamed: 0': 'Date'})
+                    df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
+
+                    print(df)
                 a += 1
+    
+                
                 
     ###  fdr을 통해 별도로 data수집
     def get_stock_price_from_fdr(self, end_date=now):
