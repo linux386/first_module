@@ -37,7 +37,7 @@ class to_report:
         
         else:
             kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 2", engine)
-            yesterday = df1 = str(kpi200_df['Date'][1])
+            yesterday = str(kpi200_df['Date'][1])
             today = str(kpi200_df['Date'][0])
             
         select_query = "select * from market where Date >="
