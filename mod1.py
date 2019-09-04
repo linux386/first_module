@@ -345,7 +345,7 @@ class to_sql:
                 
                 
     ###  fdr을 통해 별도로 data수집
-    def get_stock_price_from_fdr(self, end_date=now):
+    def insert_all_stock(self, end_date=now):
         
         file_name = input('파일이름을 입력하세요:')
         toward = input('저장 방식을 입력하세요 : sample: excel, sql ')
@@ -370,6 +370,23 @@ class to_sql:
                 df.to_excel('d:\\data_set\\kospi\\'+ stock_dic[code] +'.xlsx',engine = 'xlsxwriter')
             elif toward == 'sql':
                 df.to_sql(name=table_name, con=engine, if_exists='append')
+                
+    def insert_individual_stock(self, end_date=now):
+        
+        Code = input('주식코드를 입력하세요:')
+        Name= input('주식이름을 입력하세요 :')
+
+        df = fdr.DataReader(Code, '1995')
+        df.to_excel('d:\\'+'010660'+'.xlsx', encoding='UTF-8')
+
+        df = pd.read_excel('d:\\'+'010660'+'.xlsx')
+        df['Code']= Code
+        df['Name']= Name
+
+        df = df[['Date','Code','Name','Open', 'High', 'Low', 'Close', 'Volume']]
+
+        df.to_sql(name='market', con=engine, if_exists='append', index = False)
+
         
 
 class to_excel:
