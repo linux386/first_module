@@ -26,7 +26,8 @@ real_today = today.strftime('%Y-%m-%d')
 
 now = dt.datetime.today().strftime('%Y-%m-%d')
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
-conn = engine.connect()
+conn = pymysql.connect(host = 'localhost', user = 'kkang', password = 'leaf2027' ,db = 'stock')
+curs = conn.cursor()
 
 class to_report:
     def stock_select_with_Volume_Close(self,type = 1):
@@ -373,20 +374,24 @@ class to_sql:
                 
     def insert_individual_stock(self, end_date=now):
         
-        Code = input('주식코드를 입력하세요:')
-        Name= input('주식이름을 입력하세요 :')
+        Code = input('주식 Code를 입력하세요')
+        Name = input('주식이름을 입력하세요')
+
+        query = "delete from  market where Name = "+"'"+Name+"'"
+        curs.execute(query)
+        conn.commit()
+        conn.close()
 
         df = fdr.DataReader(Code, '1995')
-        df.to_excel('d:\\'+'010660'+'.xlsx', encoding='UTF-8')
+        df.to_excel('d:\\'+Code+'.xlsx', encoding='UTF-8')
 
-        df = pd.read_excel('d:\\'+'010660'+'.xlsx')
+        df = pd.read_excel('d:\\'+Code+'.xlsx')
         df['Code']= Code
         df['Name']= Name
 
-        df = df[['Date','Code','Name','Open', 'High', 'Low', 'Close', 'Volume']]
+        df = df[['Date','Code','Name','Open', 'High', 'Low', 'Volume','Close']]
 
         df.to_sql(name='market', con=engine, if_exists='append', index = False)
-
         
 
 class to_excel:
