@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import datetime as dt
 from datetime import datetime,timedelta
 from urllib.request import urlopen
+from pykrx import stock
 import sqlalchemy 
 import pymysql
 import matplotlib.pyplot as plt
