@@ -42,7 +42,7 @@ class to_report:
             yesterday = str(kpi200_df['Date'][1])
             today = str(kpi200_df['Date'][0])
             
-        select_query = "select * from market where Date >="
+        select_query = "select * from market_good where Date >="
         volume_query = "&& Volume >  500000"
     
         var = select_query +"'"+yesterday+"'"+ volume_query
