@@ -74,11 +74,12 @@ class to_report:
         display(df4)
 
     def get_graph(self, type=1):
-        graph_name_list=['stock','money', 'program']
+        graph_name_list=['stock','money', 'program','future']
         date='2019-01-01'
+        future_date='2019-09-12'
 
         if type == 1:
-            graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock': ")
+            graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock' or 'future':  ")
             date = input("날짜를 입력하세요 sample: '2019-01-10':") or '2019-01-01'
 
             if graph == 'money' :
@@ -157,6 +158,61 @@ class to_report:
                     #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
                     plt.legend(loc=0)
                     plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                    
+            elif graph == 'future' :
+
+                #name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드'").split()
+                #date = input("날짜를 입력하세요 sample: '2019-01-10':")
+
+                #query = "select * from future where Date > '2019-06-13'"+"'"+date+"'"
+                query = "select * from future where Date >"+"'"+future_date+"'"
+                query1 = "select * from basis where Date >"+"'"+future_date+"'"
+
+                name=['Close', '미결제약정', '외국인', '기관', '개인']
+                name1=['Close','미결제약정']
+                name2=['외국인', '기관', '개인']
+                basis_name=['kpi200','Future']
+
+                #tuple_name=tuple(name)
+                df1 = pd.DataFrame()
+                basis_df1 = pd.DataFrame()
+
+                df = pd.read_sql(query ,engine)
+                basis_df = pd.read_sql(query1 ,engine)
+
+                df.columns=['Date', 'Close', '미결제약정', '외국인', '기관', '개인']
+                df = df.set_index('Date')
+                df1=df[name]
+
+                basis_df = basis_df.set_index('Date')
+                basis_df1=basis_df[basis_name]
+
+                colors = ['red','green','blue','black']
+                plt.figure(figsize=(16,4))    
+                for i in range(len(basis_name)):
+                    plt.plot(basis_df1[basis_name[i]]/basis_df1[basis_name[i]].loc[basis_df.index[0]]*100)
+
+                plt.legend(loc=0)
+                plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                plt.show()
+                
+                plt.figure(figsize=(16,4))    
+                for i in range(len(name1)):
+                    #plt.subplot(2,2,i+1)
+                    plt.plot(df1[name1[i]]/df1[name1[i]].loc[df.index[0]]*100)
+
+                plt.legend(loc=0)
+                plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                plt.show()
+
+                plt.figure(figsize=(16,4)) 
+                for i in range(len(name2)):
+                    plt.subplot(2,2,i+1)
+                    plt.plot(df1[name2[i]]/df1[name2[i]].loc[df.index[0]]*100,color = colors[i])
+
+                    plt.legend(loc=0)
+                    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+ 
             else : 
                 print('\n input error\n')
 
@@ -244,9 +300,62 @@ class to_report:
                         #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-                else : 
-                    print('\n input error\n')       
+                        
+                    
+                elif i == 'future' :
 
+                    #name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드'").split()
+                    #date = input("날짜를 입력하세요 sample: '2019-01-10':")
+
+                    #query = "select * from future where Date > '2019-06-13'"+"'"+date+"'"
+                    query = "select * from future where Date >"+"'"+future_date+"'"
+                    query1 = "select * from basis where Date >"+"'"+future_date+"'"
+                    name=['Close', '미결제약정', '외국인', '기관', '개인']
+                    name1=['Close','미결제약정']
+                    name2=['외국인', '기관', '개인']
+                    basis_name=['kpi200','Future']
+
+                    #tuple_name=tuple(name)
+                    df1 = pd.DataFrame()
+                    basis_df1 = pd.DataFrame()
+
+                    df = pd.read_sql(query ,engine)
+                    basis_df = pd.read_sql(query1 ,engine)
+
+                    df.columns=['Date', 'Close', '미결제약정', '외국인', '기관', '개인']
+                    df = df.set_index('Date')
+                    df1=df[name]
+
+                    basis_df = basis_df.set_index('Date')
+                    basis_df1=basis_df[basis_name]
+
+                    colors = ['red','green','blue','black']
+                    plt.figure(figsize=(16,4))    
+                    for i in range(len(basis_name)):
+                        plt.plot(basis_df1[basis_name[i]]/basis_df1[basis_name[i]].loc[basis_df.index[0]]*100)
+
+                    plt.legend(loc=0)
+                    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                    plt.show()
+
+                    plt.figure(figsize=(16,4))    
+                    for i in range(len(name1)):
+                        #plt.subplot(2,2,i+1)
+                        plt.plot(df1[name1[i]]/df1[name1[i]].loc[df.index[0]]*100)
+
+                    plt.legend(loc=0)
+                    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                    plt.show()
+
+                    plt.figure(figsize=(16,4)) 
+                    for i in range(len(name2)):
+                        plt.subplot(2,2,i+1)
+                        plt.plot(df1[name2[i]]/df1[name2[i]].loc[df.index[0]]*100,color = colors[i])
+
+                        plt.legend(loc=0)
+                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                         
+                        
 class to_sql:
     
     def excel_to_sql(self, type = 1):
