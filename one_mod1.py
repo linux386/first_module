@@ -9,6 +9,7 @@ import FinanceDataReader as fdr
 import pandas as pd
 from bs4 import BeautifulSoup
 import datetime as dt
+from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime,timedelta
 from urllib.request import urlopen
 from pykrx import stock
@@ -31,9 +32,9 @@ conn = pymysql.connect(host = 'localhost', user = 'kkang', password = 'leaf2027'
 curs = conn.cursor()
 
 class to_report:
-    def stock_select_with_Volume_Close(self,type = 1):
+    def stock_select_with_Volume_Close(self,choice = 1):
     
-        if type == 1:
+        if choice == 1:
             yesterday = input("어제날짜를 입력하세요 : sample: '2019-02-07'  ") or real_yesterday
             today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ") or real_today
         
@@ -73,12 +74,12 @@ class to_report:
         display(df3)
         display(df4)
 
-    def get_graph(self, type=1):
+    def get_graph(self, choice=1):
         graph_name_list=['stock','money', 'program','future']
         date='2019-01-01'
-        future_date='2019-09-11'
+        future_date='2019-09-12'
 
-        if type == 1:
+        if choice == 1:
             graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock' or 'future':  ")
             date = input("날짜를 입력하세요 sample: '2019-01-10':") or '2019-01-01'
 
@@ -165,8 +166,8 @@ class to_report:
                 #date = input("날짜를 입력하세요 sample: '2019-01-10':")
 
                 #query = "select * from future where Date > '2019-06-13'"+"'"+date+"'"
-                query = "select * from future where Date > '2019-06-11'"
-                query1 = "select * from basis where Date > '2019-06-13'"
+                query = "select * from future where Date >"+"'"+future_date+"'"
+                query1 = "select * from basis where Date >"+"'"+future_date+"'"
 
                 name=['Close', '미결제약정', '외국인', '기관', '개인']
                 name1=['Close','미결제약정']
@@ -219,7 +220,61 @@ class to_report:
                 
         else :
             for i in graph_name_list:
-                if i == 'money' :
+                if i == 'stock' :
+                    name = pd.read_excel('d:\\detect_stock_with_volume.xlsx', encoding='utf-8')
+                    name_all = name['Name']
+                    name_all = name_all.to_list()
+                    name = name[:5]
+                    name = name['Name']
+                    name = name.to_list()
+
+                    select_query = "select Date,Volume,Close from market where Name= "
+                    date_query = "Date > "
+
+
+                    tuple_name=tuple(name)
+                    df1 = pd.DataFrame()
+
+                    for x in tuple_name:
+                        var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
+                        df = pd.read_sql(var ,engine)
+                        df.columns=['Date',x+'거래량',x]
+                        if df1.empty:
+                            df1 = df
+                        else:
+                            df1 = pd.merge (df,df1,on='Date')
+                    df1=df1.set_index('Date')
+                    size = len(df1.index)
+
+                    plt.figure(figsize=(16,4))
+                    for i in range(len(name)):
+                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
+
+                        plt.legend(loc=0)
+                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+
+                    plt.figure(figsize=(16,4))
+                    for i in range(len(name)):
+                        volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
+                        plt.plot(df1[name[i]+'거래량']/volume_average)
+                        #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
+                        plt.legend(loc=0)
+                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)  
+
+                    for i in name_all:
+                        var = select_query +"'"+i+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
+                        df = pd.read_sql(var, engine)
+
+                        source = MinMaxScaler()
+                        data = source.fit_transform(df[['Close','Volume']].values.astype(float))
+                        df1 = pd.DataFrame(data)
+                        df1.columns=['Close','Volume']
+                        df1 = df1.set_index(df['Date'])
+                        df1.plot(figsize=(16,2))
+                        plt.title(i)
+                        plt.show()
+                
+                elif i == 'money' :
                     money_name = ['kpi200', '거래량', '고객예탁금', '신용잔고']
                     money_query = "select * from kpi_with_money where Date >"+"'"+date+"'"
                     money_df = pd.read_sql(money_query ,engine)
@@ -259,64 +314,14 @@ class to_report:
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
                         #plt.show()
                         
-                elif i == 'stock' :
-                    name = pd.read_excel('d:\\detect_stock_with_volume.xlsx', encoding='utf-8')
-                    name = name[:5]
-                    name = name['Name']
-                    name = name.to_list()
-                    #df.values[0]
-                    #name = input('주식이름을 입력하세요:').split()
-                    #date = input("날짜를 입력하세요 sample: '2019-01-10':")
-
-                    select_query = "select Date,Volume,Close from market where Name= "
-                    date_query = "Date > "
-
-
-                    tuple_name=tuple(name)
-                    df1 = pd.DataFrame()
-
-                    for x in tuple_name:
-                        var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
-                        df = pd.read_sql(var ,engine)
-                        df.columns=['Date',x+'거래량',x]
-                        if df1.empty:
-                            df1 = df
-                        else:
-                            df1 = pd.merge (df,df1,on='Date')
-                    df1=df1.set_index('Date')
-                    size = len(df1.index)
-
-                    plt.figure(figsize=(16,4))
-                    for i in range(len(name)):
-                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
-
-                        plt.legend(loc=0)
-                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-
-                    plt.figure(figsize=(16,4))
-                    for i in range(len(name)):
-                        volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
-                        plt.plot(df1[name[i]+'거래량']/volume_average)
-                        #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
-                        plt.legend(loc=0)
-                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
-                        
-                    
                 elif i == 'future' :
-
-                    #name = input("항목을 입력하세요: 선택항목: 'kpi200', '거래량', '고객예탁금', '신용잔고', '주식형펀드', '혼합형펀드', '채권형펀드'").split()
-                    #date = input("날짜를 입력하세요 sample: '2019-01-10':")
-
-                    #query = "select * from future where Date > '2019-06-13'"+"'"+date+"'"
-                    query = "select * from future where Date > '2019-06-11'"
-                    query1 = "select * from basis where Date > '2019-06-13'"
-
+                    query = "select * from future where Date >"+"'"+future_date+"'"
+                    query1 = "select * from basis where Date >"+"'"+future_date+"'"
                     name=['Close', '미결제약정', '외국인', '기관', '개인']
                     name1=['Close','미결제약정']
                     name2=['외국인', '기관', '개인']
                     basis_name=['kpi200','Future']
 
-                    #tuple_name=tuple(name)
                     df1 = pd.DataFrame()
                     basis_df1 = pd.DataFrame()
 
@@ -341,7 +346,6 @@ class to_report:
 
                     plt.figure(figsize=(16,4))    
                     for i in range(len(name1)):
-                        #plt.subplot(2,2,i+1)
                         plt.plot(df1[name1[i]]/df1[name1[i]].loc[df.index[0]]*100)
 
                     plt.legend(loc=0)
@@ -359,11 +363,11 @@ class to_report:
                         
 class to_sql:
     
-    def excel_to_sql(self, type = 1):
-        excel_name_list=['kpi200.xlsx', 'investortrend.xlsx','programtrend.xlsx','moneytrend.xlsx','market.xlsx']
+    def excel_to_sql(self, choice = 1):
+        excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','program_trend.xlsx','money_trend.xlsx','market.xlsx']
         sql_table_name_list=['kpi200','investortrend','programtrend','moneytrend','market.xlsx']
 
-        if type == 1:
+        if choice == 1:
         
             file_name = input('파일이름을 입력하세요:')
 
@@ -583,7 +587,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
 
-    def get_investor_trend_date(self,until_date=real_yesterday,type=1):
+    def get_investor_trend_date(self,until_date=real_yesterday,choice=1):
     
         url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
 
@@ -599,7 +603,7 @@ class to_excel:
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\investortrend.xlsx'
         
-        if type == 1:
+        if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
 
             year = until_date.split('-')[0]
@@ -742,7 +746,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
 
-    def get_money_trend_date(self,until_date=real_today,type=1):
+    def get_money_trend_date(self,until_date=real_today,choice=1):
         
         url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
 
@@ -758,7 +762,7 @@ class to_excel:
         path = 'd:\\moneytrend.xlsx'
 
     
-        if type == 1:
+        if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
 
             year = until_date.split('-')[0]
@@ -904,7 +908,7 @@ class to_excel:
         print(df)
        
 
-    def get_kpi200_date(self,until_date=real_yesterday,type=1):
+    def get_kpi200_date(self,until_date=real_yesterday,choice=1):
     
         url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
 
@@ -920,7 +924,7 @@ class to_excel:
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\kpi200.xlsx'
 
-        if type == 1:
+        if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
 
             year = until_date.split('-')[0]
@@ -1063,7 +1067,7 @@ class to_excel:
         df.to_excel(path, encoding='utf-8')
         print(df)
             
-    def get_program_trend_date(self,until_date=real_yesterday, type=1):
+    def get_program_trend_date(self,until_date=real_yesterday, choice=1):
 
         url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
 
@@ -1079,7 +1083,7 @@ class to_excel:
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
         path = 'd:\\programtrend.xlsx'
 
-        if type == 1:
+        if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
 
             year = until_date.split('-')[0]
