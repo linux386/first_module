@@ -31,7 +31,17 @@ engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stoc
 conn = pymysql.connect(host = 'localhost', user = 'kkang', password = 'leaf2027' ,db = 'stock')
 curs = conn.cursor()
 
+def last_page(source):
+    last = source.find('td',class_='pgRR').find('a')['href']
+    last = last.split('page')[1]
+    last = last.split('=')[1]
+    last = int(last)
+    print(last)
+    return last
+
 class to_report:
+    select_query = "select * from market_good where Date >="
+    volume_query = "&& Volume >  500000"
     def stock_select_with_Volume_Close(self,choice = 1):
     
         if choice == 1:
@@ -43,8 +53,8 @@ class to_report:
             yesterday = str(kpi200_df['Date'][1])
             today = str(kpi200_df['Date'][0])
             
-        select_query = "select * from market_good where Date >="
-        volume_query = "&& Volume >  500000"
+        select_query = self.select_query
+        volume_query =self.volume_query
     
         var = select_query +"'"+yesterday+"'"+ volume_query
         df = pd.read_sql(var ,engine)
@@ -362,10 +372,12 @@ class to_report:
                          
                         
 class to_sql:
+    excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','program_trend.xlsx','money_trend.xlsx','market.xlsx']
+    sql_table_name_list=['kpi200','investortrend','programtrend','moneytrend','market.xlsx']
     
     def excel_to_sql(self, choice = 1):
-        excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','program_trend.xlsx','money_trend.xlsx','market.xlsx']
-        sql_table_name_list=['kpi200','investortrend','programtrend','moneytrend','market.xlsx']
+        excel_name_list=self.excel_name_list
+        sql_table_name_list=self.sql_table_name_list
 
         if choice == 1:
         
@@ -376,15 +388,15 @@ class to_sql:
                 table_name = 'kpi200'
                 df.columns=['Date','kpi200','거래량']
 
-            elif file_name=='investortrend.xlsx':
+            elif file_name=='investor_trend.xlsx':
                 table_name = 'investortrend'
                 df.columns=['Date', '개인', '외국인','기관']
 
-            elif file_name=='moneytrend.xlsx':
+            elif file_name=='money_trend.xlsx':
                 table_name = 'moneytrend'
                 df.columns=['Date', '고객예탁금', '신용잔고','주식형펀드','혼합형펀드','채권형펀드']
 
-            elif file_name=='programtrend.xlsx':
+            elif file_name=='program_trend.xlsx':
                 table_name = 'programtrend'
                 df.columns=['Date', '차익', '비차익','전체']
 
@@ -417,6 +429,7 @@ class to_sql:
         else :
             a = 0
             for i in excel_name_list:
+                
                 if i == 'market.xlsx':
                     data = pd.read_excel('d:\\market.xlsx')
                     market_df = pd.read_sql("select Date from market order by Date desc limit 1", engine)
@@ -510,21 +523,21 @@ class to_sql:
         
 
 class to_excel:
+    investor_trend_url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+    money_trend_url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
+    kpi200_url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
+    program_trend_url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='    
     
-    def get_investortrend(self):
-        url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+    def get_investor_trend(self):
+        url  = self.investor_trend_url 
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-
-        last = source.find('td',class_='pgRR').find('a')['href']
-        last = last.split('page')[1]
-        last = last.split('=')[1]
-        last = int(last)
+        last = last_page(source)
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\investortrend.xlsx'
+        path = 'd:\\investor_trend.xlsx'
     
         # 날짜를 받을 리스트
         date_list = []
@@ -588,20 +601,15 @@ class to_excel:
         print(df)
 
     def get_investor_trend_date(self,until_date=real_yesterday,choice=1):
-    
-        url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
-
+        url  = self.investor_trend_url
+        
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-
-        last = source.find('td',class_='pgRR').find('a')['href']
-        last = last.split('page')[1]
-        last = last.split('=')[1]
-        last = int(last)
+        last = last_page(source)
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\investortrend.xlsx'
+        path = 'd:\\investor_trend.xlsx'
         
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
@@ -671,18 +679,15 @@ class to_excel:
     
     def get_money_trend(self):
     
-        url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
+        url = self.money_trend_url
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-
-        last = source.find('td',class_='pgRR').find('a')['href']
-        last = last.split('&')[1]
-        last = last.split('=')[1]
-        last = int(last)
+        last = last_page(source)
+        print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\moneytrend.xlsx'   
+        path = 'd:\\money_trend.xlsx'   
     
         # 날짜를 받을 리스트
         date_list = []
@@ -733,13 +738,6 @@ class to_excel:
                     dictionary['주식형펀드'].pop(-1)
                     dictionary['혼합형펀드'].pop(-1)
                 
-        # 개별 list 요소 갯수 파악 
-        #print(len(date_list))
-        #print(len(dictionary['고객예탁금']))
-        #print(len(dictionary['신용잔고']))
-        #print(len(dictionary['주식형 펀드']))
-        #print(len(dictionary['혼합형 펀드']))
-        #print(len(dictionary['채권형 펀드']))
         print(str(i) + '번째 페이지 크롤링 완료')
         df = pd.DataFrame(dictionary,index = date_list)
         df = df.sort_index()
@@ -748,18 +746,15 @@ class to_excel:
 
     def get_money_trend_date(self,until_date=real_today,choice=1):
         
-        url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
+        url = self.money_trend_url
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-
-        last = source.find('td',class_='pgRR').find('a')['href']
-        last = last.split('&')[1]
-        last = last.split('=')[1]
-        last = int(last)
+        last = last_page(source)
+        print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\moneytrend.xlsx'
+        path = 'd:\\money_trend.xlsx'
 
     
         if choice == 1:
@@ -834,15 +829,11 @@ class to_excel:
             
     def get_kpi200(self):
         
-        url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
+        url = self.kpi200_url
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-
-        last = source.find('td',class_='pgRR').find('a')['href']
-        last = last.split('page')[1]
-        last = last.split('=')[1]
-        last = int(last)
+        last = last_page(source)
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
@@ -910,15 +901,11 @@ class to_excel:
 
     def get_kpi200_date(self,until_date=real_yesterday,choice=1):
     
-        url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
+        url = self.kpi200_url
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-
-        last = source.find('td',class_='pgRR').find('a')['href']
-        last = last.split('page')[1]
-        last = last.split('=')[1]
-        last = int(last)
+        last = last_page(source)
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
@@ -990,21 +977,16 @@ class to_excel:
                     count += 1
                     
                     
-    def get_programtrend(self):
-    
-        url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
+    def get_program_trend(self):
+        url = self.program_trend_url
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-
-        last = source.find('td',class_='pgRR').find('a')['href']
-        last = last.split('page')[1]
-        last = last.split('=')[1]
-        last = int(last)
+        last = last_page(source)
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\programtrend.xlsx'
+        path = 'd:\\program_trend.xlsx'
     
         # 날짜를 받을 리스트
         date_list = []
@@ -1069,19 +1051,15 @@ class to_excel:
             
     def get_program_trend_date(self,until_date=real_yesterday, choice=1):
 
-        url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='
+        url = self.program_trend_url
 
         source = urlopen(url).read()   # 지정한 페이지에서 코드 읽기
         source = BeautifulSoup(source, 'lxml')   # 뷰티풀 스프로 태그별로 코드 분류
-
-        last = source.find('td',class_='pgRR').find('a')['href']
-        last = last.split('page')[1]
-        last = last.split('=')[1]
-        last = int(last)
+        last = last_page(source)
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\programtrend.xlsx'
+        path = 'd:\\program_trend.xlsx'
 
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
@@ -1152,5 +1130,6 @@ class to_excel:
 
 if __name__ == "__main__":
     print("This is Module")
+    
     
     

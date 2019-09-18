@@ -4,7 +4,10 @@ Spyder Editor
 
 This is a temporary script file.
 """
-
+import io
+import json
+import sys
+from fake_useragent import UserAgent
 import FinanceDataReader as fdr
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -12,6 +15,7 @@ import datetime as dt
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime,timedelta
 from urllib.request import urlopen
+import urllib.request as req
 from pykrx import stock
 import sqlalchemy 
 import pymysql
@@ -256,10 +260,10 @@ class to_report:
                     df1=df1.set_index('Date')
                     size = len(df1.index)
 
+
                     plt.figure(figsize=(16,4))
                     for i in range(len(name)):
                         plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
-
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
 
@@ -372,8 +376,8 @@ class to_report:
                          
                         
 class to_sql:
-    excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','program_trend.xlsx','money_trend.xlsx','market.xlsx']
-    sql_table_name_list=['kpi200','investortrend','programtrend','moneytrend','market.xlsx']
+    excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','money_trend.xlsx','program_trend.xlsx','market.xlsx']
+    sql_table_name_list=['kpi200','investortrend','moneytrend','programtrend','market']
     
     def excel_to_sql(self, choice = 1):
         excel_name_list=self.excel_name_list
@@ -399,7 +403,7 @@ class to_sql:
             elif file_name=='program_trend.xlsx':
                 table_name = 'programtrend'
                 df.columns=['Date', '차익', '비차익','전체']
-
+               
             elif file_name=='market.xlsx':
                 data = pd.read_excel('d:\\market.xlsx')
                 start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
@@ -527,6 +531,7 @@ class to_excel:
     money_trend_url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
     kpi200_url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
     program_trend_url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='    
+    future_url = 'http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page='
     
     def get_investor_trend(self):
         url  = self.investor_trend_url 
@@ -1126,7 +1131,92 @@ class to_excel:
                     
                     count += 1
             
-            
+    def future(self, choice = 1):
+        path = 'd:\\future.xlsx'
+        if choice ==1:
+            # Fake Header 정보
+            ua = UserAgent()
+
+            # 헤더 선언
+            headers = {
+                'User-Agent': ua.ie,
+                'referer': 'http://finance.daum.net/domestic/futures'
+            }
+
+            url = self.future_url +'1'
+            #url = "http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page=1"
+            res = req.urlopen(req.Request(url, headers=headers)).read().decode('utf-8')
+
+            df1 = pd.DataFrame()
+            for i in range(1,7):
+                # 다음 주식 요청 URL
+                url = "http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page="+str(i)
+
+                res = req.urlopen(req.Request(url, headers=headers)).read().decode('utf-8')
+
+                rank_json = json.loads(res)['data']
+
+                df = pd.DataFrame(rank_json)
+                df1 = df1.append(df,ignore_index=True)
+
+            df2 = df1[['date','tradePrice','change', 'changePrice','changeRate','unsettledVolume','foreignSettlement', 'institutionSettlement', 'privateSettlement']]
+            df2.columns=('Date','Future','change','가격변동','등락률','미결제약정','외국인','기관','개인')
+            df2['Date'] = pd.to_datetime(df2['Date']).dt.date
+            #df2['Date'] = pd.to_datetime(df2['Date']).apply(lambda x: x.date())
+            #df2['Date'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d') # yyyy-mm-dd hh:mm:ss -> yyyy-mm-dd (속성은그대로 보여주는 형식만 변경)
+            df2 =df2[['Date','Future','미결제약정','외국인','기관','개인']]
+            #df2 = df2[df2.Date > until_date]
+            df2.to_sql(name='future', con=engine, if_exists='append', index = False)
+            df2 = df2.set_index('Date')
+            df2.to_excel(path, encoding='utf-8')
+            #df2
+        else:
+            future_df = pd.read_sql("select Date from future order by Date desc limit 1", engine)
+            future_df = str(future_df['Date'])
+            until_date = future_df[5:15]
+
+            year = until_date.split('-')[0]
+            mm = until_date.split('-')[1]
+            dd = until_date.split('-')[2]
+            #year=year[2:]
+            until_date = year+'-'+mm+'-'+dd
+            until_date = datetime.strptime(until_date, '%Y-%m-%d').date() ## str 을  datetime.date로 type 변경
+
+            # Fake Header 정보
+            ua = UserAgent()
+
+            # 헤더 선언
+            headers = {
+                'User-Agent': ua.ie,
+                'referer': 'http://finance.daum.net/domestic/futures'
+            }
+
+
+            url = "http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page=1"  #KR4011PC002 "선물 코스피 200지수 12월물" 코드는 구글검색이용
+            res = req.urlopen(req.Request(url, headers=headers)).read().decode('utf-8')
+
+            df1 = pd.DataFrame()
+            for i in range(1,3):
+                # 다음 주식 요청 URL
+                url = "http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page="+str(i)
+
+                res = req.urlopen(req.Request(url, headers=headers)).read().decode('utf-8')
+
+                rank_json = json.loads(res)['data']
+
+                df = pd.DataFrame(rank_json)
+                df1 = df1.append(df,ignore_index=True)
+            df2 = df1[['date','tradePrice','change', 'changePrice','changeRate','unsettledVolume','foreignSettlement', 'institutionSettlement', 'privateSettlement']]
+            df2.columns=('Date','Future','change','가격변동','등락률','미결제약정','외국인','기관','개인')
+            df2['Date'] = pd.to_datetime(df2['Date']).dt.date
+            #df2['Date'] = pd.to_datetime(df2['Date']).apply(lambda x: x.date())
+            #df2['Date'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d') # yyyy-mm-dd hh:mm:ss -> yyyy-mm-dd (속성은그대로 보여주는 형식만 변경)
+            df2 =df2[['Date','Future','미결제약정','외국인','기관','개인']]
+            df2 = df2[df2.Date > until_date]
+            df2.to_sql(name='future', con=engine, if_exists='append', index = False)
+            df2 = df2.set_index('Date')
+            df2.to_excel(path, encoding='utf-8')
+            #df2            
 
 if __name__ == "__main__":
     print("This is Module")
