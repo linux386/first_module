@@ -19,6 +19,7 @@ import urllib.request as req
 from pykrx import stock
 import sqlalchemy 
 import pymysql
+import talib.abstract as ta
 import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
@@ -278,12 +279,17 @@ class to_report:
                     for i in name_all:
                         var = select_query +"'"+i+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
                         df = pd.read_sql(var, engine)
-
+                        df[['Volume','Close']] = df[['Volume','Close']].astype(float) #  TA-Lib로 평균을 구하려면 실수로 만들어야 함
+                        df.columns=df.columns.str.lower()
+                        
+                        talib_ma120 = ta.MA(df, timeperiod=120)
+                        df['ma120'] = talib_ma120
+                        
                         source = MinMaxScaler()
-                        data = source.fit_transform(df[['Close','Volume']].values.astype(float))
+                        data = source.fit_transform(df[['close','volume','ma120']].values)
                         df1 = pd.DataFrame(data)
-                        df1.columns=['Close','Volume']
-                        df1 = df1.set_index(df['Date'])
+                        df1.columns=['close','volume','ma120']
+                        df1 = df1.set_index(df['date'])
                         df1.plot(figsize=(16,2))
                         plt.title(i)
                         plt.show()
