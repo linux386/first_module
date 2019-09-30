@@ -16,7 +16,6 @@ from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime,timedelta
 from urllib.request import urlopen
 import urllib.request as req
-from pykrx import stock
 import sqlalchemy 
 import pymysql
 import talib.abstract as ta
@@ -117,7 +116,7 @@ def make_dataset(name,date):
     df1 = pd.DataFrame(data)
     df1.columns=['ma5', 'ma10', 'ma15', 'ma20', 'ma30', 'ma60', 'ma120','volume', 'close']
     df1 = df1.set_index(df['date'])
-    return df1    
+    return df1  
 
 class to_report:
     select_query = "select * from market_good where Date >="
@@ -156,17 +155,17 @@ class to_report:
         df4 = df3.sort_values(by=['Close','Volume'],ascending=False)
         df3 = df3.reset_index(drop=True)
 
-        df3 = df3[:19]
+        df3 = df3[:15]
         df4 = df4.reset_index(drop=True)
-        df4 = df4[:19]
-        df3.to_excel('d:\\stockdata\\vote_stock\\detect_stock_with_volume_'+today+'.xlsx', encoding='utf-8')
-        df4.to_excel('d:\\stockdata\\vote_stock\\detect_stock_with_price_'+today+'.xlsx', encoding='utf-8')               
+        df4 = df4[:15]
+        df3.to_excel('d:\\detect_stock_with_volume.xlsx', encoding='utf-8')
+        df4.to_excel('d:\\detect_stock_with_price.xlsx', encoding='utf-8')        
         display(df3)
         display(df4)
 
     def get_graph(self, choice=1):
         graph_name_list=['stock','money', 'program','future']
-        date='2017-01-01'
+        date='2019-01-01'
         future_date='2019-09-12'
 
         if choice == 1:
@@ -217,7 +216,7 @@ class to_report:
                 name = input('주식이름을 입력하세요:').split()
                 #date = input("날짜를 입력하세요 sample: '2019-01-10':")
 
-                select_query = "select Date,Volume,Close from market_good where Name= "
+                select_query = "select Date,Volume,Close from market where Name= "
                 date_query = "Date > "
 
 
@@ -318,7 +317,7 @@ class to_report:
                     name = name['Name']
                     name = name.to_list()
 
-                    select_query = "select Date,Volume,Close from market_good where Name= "
+                    select_query = "select Date,Volume,Close from market where Name= "
                     date_query = "Date > "
 
 
@@ -354,7 +353,18 @@ class to_report:
                     for i in name_all:
                         var = select_query +"'"+i+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
                         df = pd.read_sql(var, engine)
-                        close_vol_ma(df,select='ma120')
+                        df[['Volume','Close']] = df[['Volume','Close']].astype(float) #  TA-Lib로 평균을 구하려면 실수로 만들어야 함
+                        df.columns=df.columns.str.lower()
+                        
+                        talib_ma120 = ta.MA(df, timeperiod=120)
+                        df['ma120'] = talib_ma120
+                        
+                        source = MinMaxScaler()
+                        data = source.fit_transform(df[['close','volume','ma120']].values)
+                        df1 = pd.DataFrame(data)
+                        df1.columns=['close','volume','ma120']
+                        df1 = df1.set_index(df['date'])
+                        df1.plot(figsize=(16,2))
                         plt.title(i)
                         plt.show()
                 
