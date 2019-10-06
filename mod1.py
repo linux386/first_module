@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 from matplotlib import font_manager, rc
+plt.rcParams.update({'figure.max_open_warning': 0})
 font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
 rc('font', family=font_name)
 
@@ -66,31 +67,46 @@ def select_stock(name,date):
     df = pd.read_sql(var, engine)
     return df
 
+def market_stock(date):
+    select_query = "select * from market_good where Date >  "
+    var = select_query +"'"+date+"'"
+    df = pd.read_sql(var, engine)
+    return df
+
+def min_max(df,select):
+    ma(df)
+    source = MinMaxScaler()
+    data = source.fit_transform(df[['close',select,'volume']].values)
+    df1 = pd.DataFrame(data)
+    df1.columns=['close',select,'volume']
+    df1 = df1.set_index(df['date'])
+    return df1
+
 def ma(DataFrame):
     df = DataFrame
     df.columns=df.columns.str.lower()
     df[['volume','close']] = df[['volume','close']].astype(float) #  TA-Lib로 평균을 구하려면 실수로 만들어야 함
 
     talib_ma5 = ta.MA(df, timeperiod=5)
-    df['ma5'] = talib_ma5
+    df.loc[:,'ma5'] = talib_ma5
     
     talib_ma10 = ta.MA(df, timeperiod=10)
-    df['ma10'] = talib_ma10    
+    df.loc[:,'ma10'] = talib_ma10    
 
     talib_ma15 = ta.MA(df, timeperiod=15)
-    df['ma15'] = talib_ma15
+    df.loc[:,'ma15'] = talib_ma15
 
     talib_ma20 = ta.MA(df, timeperiod=20)
-    df['ma20'] = talib_ma20
+    df.loc[:,'ma20'] = talib_ma20
     
     talib_ma30 = ta.MA(df, timeperiod=30)
-    df['ma30'] = talib_ma30    
+    df.loc[:,'ma30'] = talib_ma30    
     
     talib_ma60 = ta.MA(df, timeperiod=60)
-    df['ma60'] = talib_ma60    
+    df.loc[:,'ma60'] = talib_ma60    
     
     talib_ma120 = ta.MA(df, timeperiod=120)
-    df['ma120'] = talib_ma120  
+    df.loc[:,'ma120'] = talib_ma120  
 
 def close_vol_ma(df,select):
     ma(df)
@@ -102,6 +118,7 @@ def close_vol_ma(df,select):
     df1 = df1.set_index(df['date'])
     df1.plot(figsize=(16,4))
     plt.title(df['name'][0])
+    plt.show()
     
 def make_dataset(name,date):
     col = ['ma5', 'ma10', 'ma15', 'ma20', 'ma30', 'ma60', 'ma120','volume', 'close']
@@ -158,8 +175,8 @@ class to_report:
         df3 = df3[:15]
         df4 = df4.reset_index(drop=True)
         df4 = df4[:15]
-        df3.to_excel('d:\\detect_stock_with_volume.xlsx', encoding='utf-8')
-        df4.to_excel('d:\\detect_stock_with_price.xlsx', encoding='utf-8')        
+        df3.to_excel(path_volume+today+'.xlsx', encoding='utf-8')
+        df4.to_excel(path_price+today+'.xlsx', encoding='utf-8')        
         display(df3)
         display(df4)
 
@@ -310,7 +327,7 @@ class to_report:
         else :
             for i in graph_name_list:
                 if i == 'stock' :
-                    name = pd.read_excel('d:\\detect_stock_with_volume.xlsx', encoding='utf-8')
+                    name = pd.read_excel(path+today+'.xlsx', encoding='utf-8')
                     name_all = name['Name']
                     name_all = name_all.to_list()
                     name = name[:5]
@@ -528,6 +545,8 @@ class to_sql:
                     
                     #year=year[2:]
                     start_date = year+'-'+mm+'-'+dd
+                    if start_date == '2019-09-31':
+                        start_date = '2019-10-01'
                     print('\n market start_date:{}'.format(start_date))
 
                     code_list = data['종목코드'].tolist()
