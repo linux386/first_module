@@ -38,18 +38,15 @@ curs = conn.cursor()
 
 path_price = 'd:\\stockdata\\vote_stock\\detect_stock_with_price_'
 path_volume = 'd:\\stockdata\\vote_stock\\detect_stock_with_volume_'
+path_ma120 = 'd:\\stockdata\\close_ma120\\close_ma120_'
 
-def group_analysis(path,today):
-    path_price = 'd:\\stockdata\\vote_stock\\detect_stock_with_price_'
-    path_volume = 'd:\\stockdata\\vote_stock\\detect_stock_with_volume_'  
-    #today = input('날짜를 입력하세요: ')
-
+def from_excel_analysis(path,today,start):
     df = pd.read_excel(path+today+'.xlsx')
-    df = df['Name']
+    df = df['name']
 
     name=df.to_list()
     for i in name:
-        df=select_stock(i,'18-01-01')
+        df=select_stock(i,start)
         close_vol_ma(df,'ma120')
 
 def last_page(source):
@@ -67,8 +64,8 @@ def select_stock(name,date):
     df = pd.read_sql(var, engine)
     return df
 
-def market_stock(date):
-    select_query = "select * from market_good where Date >  "
+def all_stock(date):
+    select_query = "select * from market_good where Date =  "
     var = select_query +"'"+date+"'"
     df = pd.read_sql(var, engine)
     return df
@@ -88,25 +85,25 @@ def ma(DataFrame):
     df[['volume','close']] = df[['volume','close']].astype(float) #  TA-Lib로 평균을 구하려면 실수로 만들어야 함
 
     talib_ma5 = ta.MA(df, timeperiod=5)
-    df.loc[:,'ma5'] = talib_ma5
+    df['ma5'] = talib_ma5
     
     talib_ma10 = ta.MA(df, timeperiod=10)
-    df.loc[:,'ma10'] = talib_ma10    
+    df['ma10'] = talib_ma10    
 
     talib_ma15 = ta.MA(df, timeperiod=15)
-    df.loc[:,'ma15'] = talib_ma15
+    df['ma15'] = talib_ma15
 
     talib_ma20 = ta.MA(df, timeperiod=20)
-    df.loc[:,'ma20'] = talib_ma20
+    df['ma20'] = talib_ma20
     
     talib_ma30 = ta.MA(df, timeperiod=30)
-    df.loc[:,'ma30'] = talib_ma30    
+    df['ma30'] = talib_ma30    
     
     talib_ma60 = ta.MA(df, timeperiod=60)
-    df.loc[:,'ma60'] = talib_ma60    
+    df['ma60'] = talib_ma60    
     
     talib_ma120 = ta.MA(df, timeperiod=120)
-    df.loc[:,'ma120'] = talib_ma120  
+    df['ma120'] = talib_ma120  
 
 def close_vol_ma(df,select):
     ma(df)
@@ -325,9 +322,14 @@ class to_report:
 
                 
         else :
+            
+            kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 2", engine)
+            yesterday = str(kpi200_df['Date'][1])
+            today = str(kpi200_df['Date'][0])
+            
             for i in graph_name_list:
                 if i == 'stock' :
-                    name = pd.read_excel(path+today+'.xlsx', encoding='utf-8')
+                    name = pd.read_excel(path_volume+today+'.xlsx', encoding='utf-8')
                     name_all = name['Name']
                     name_all = name_all.to_list()
                     name = name[:5]
