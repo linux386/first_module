@@ -547,8 +547,8 @@ class to_sql:
                     
                     #year=year[2:]
                     start_date = year+'-'+mm+'-'+dd
-                    if start_date == '2019-09-31':
-                        start_date = '2019-10-01'
+                    if start_date == '2019-10-32':
+                        start_date = '2019-11-01'
                     print('\n market start_date:{}'.format(start_date))
 
                     code_list = data['종목코드'].tolist()
