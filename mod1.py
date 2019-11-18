@@ -44,8 +44,10 @@ path_price = 'd:\\stockdata\\vote_stock\\detect_stock_with_price_'
 path_volume = 'd:\\stockdata\\vote_stock\\detect_stock_with_volume_'
 path = 'd:\\stockdata\\close_ma120\\close_ma120_'
 path_total = 'd:\\stockdata\\close_ma120\\total_'
+path_total_f = 'd:\\stockdata\\close_ma120\\total_filter_'
 path_total_a = 'd:\\stockdata\\close_ma120\\total_a_'
 path_total_b = 'd:\\stockdata\\close_ma120\\total_b_'
+path_total_c = 'd:\\stockdata\\close_ma120\\total_c_'
 
 def from_excel_analysis(path,today,start):
     df = pd.read_excel(path+today+'.xlsx')
@@ -182,43 +184,61 @@ class analysis:
         pure_df.columns = map(str.lower, pure_df.columns) ## 
 
         last_df = df2.loc[df2['date'] == datelist[-1]]
-        last_df = last_df[last_df['ma120'] < 0.1]
+        last_close_df = last_df[last_df['close'] < 0.1]
+        last_ma_df = last_df[last_df['ma120'] < 0.1]
+        a_df = last_ma_df[last_ma_df['close'] > last_ma_df['ma60']] 
+        last_ma_df = a_df[a_df['ma60'] > a_df['ma120']]
         last_price_df = pure_df.loc[pure_df['date'] == datelist[-1]]
-
+    
         for i in datelist:
             first_df = df2.loc[df2['date'] == i]
             first_price_df = pure_df.loc[pure_df['date'] == i]
-            one_df = pd.merge(first_df,last_df,on='code')
-            reset_index_df = last_df.reset_index()
-            one_df['code']= reset_index_df['code']
-            ma_df = pd.merge(first_price_df[['close','code']],one_df,on='code')
+            one_close_df = pd.merge(first_df,last_close_df,on='code')
+            one_df = pd.merge(first_df,last_ma_df,on='code')
+            reset_close_df = last_close_df.reset_index()
+            reset_ma_df = last_ma_df.reset_index()
+            one_close_df['code']= reset_close_df['code']
+            one_df['code']= reset_ma_df['code']
+            close_df = pd.merge(first_price_df[['close','code']],one_close_df,on='code')
+            ma_df = pd.merge(first_price_df[['close','code']],one_df,on='code')        
+            two_close_df = pd.merge(last_price_df[['close','code','volume']],close_df,on='code')
             two_df = pd.merge(last_price_df[['close','code','volume']],ma_df,on='code')
+            two_close_df.columns= ['price_y','code', 'volume_z','price_x', 'close_x', 'ma60_x', 'ma120_x', 'volume_x','name_x', 'date_x', 'close_y', 'ma60_y', 'ma120_y', 'volume_y','name_y', 'date_y']
             two_df.columns= ['price_y','code', 'volume_z','price_x', 'close_x', 'ma60_x', 'ma120_x', 'volume_x','name_x', 'date_x', 'close_y', 'ma60_y', 'ma120_y', 'volume_y','name_y', 'date_y']
 
+            price_df = two_close_df[['name_x','code','close_x','close_y','ma60_x','ma60_y','ma120_x','ma120_y','price_x','price_y','date_x','volume_z']]
             ma120_df = two_df[['name_x','code','close_x','close_y','ma60_x','ma60_y','ma120_x','ma120_y','price_x','price_y','date_x','volume_z']]
+            price_df['price_diff']=price_df['price_y']/price_df['price_x']
             ma120_df['price_diff']=ma120_df['price_y']/ma120_df['price_x']
-            ma120_df =  ma120_df.sort_values(["price_diff"],ascending=False)
-            second_df =  first_df.sort_values(["ma120"],ascending=False)
+            price_df =  price_df.sort_values(["price_diff"],ascending=True)
+            ma120_df =  ma120_df.sort_values(["price_diff"],ascending=True)
+            second_df =  first_df.sort_values(["ma120"],ascending=True)
             #ma120_df['price_x']=first_price_df['close'].values
             #ma120_df['price_y']=last_price_df['close'].values
             strdate = i.strftime('%Y-%m-%d')
-            #second_df.to_excel(path+strdate+'.xlsx')
+
             if select_start == select_start_a:
                 ma120_df.to_excel(path_total_a+strdate+'.xlsx')
+                price_df.to_excel(path_total_c+strdate+'.xlsx')
             else:
                 ma120_df.to_excel(path_total_b+strdate+'.xlsx')
+                second_df.to_excel(path+strdate+'.xlsx')
 
-    def intersection(self ):
+    def total_ab_intersection(self ):
         datelist = self.datelist
         for i in datelist:
             strdate = i.strftime('%Y-%m-%d')
             df_a = pd.read_excel(path_total_a+strdate+'.xlsx')
+            filter_df_a = df_a[df_a['close_y'] < 0.2]
             df_b = pd.read_excel(path_total_b+strdate+'.xlsx')
             #df_ab = pd.DataFrame()
             df_ab = pd.merge(df_a[['name_x']],df_b,on='name_x')
+            filter_df_ab = pd.merge(filter_df_a[['name_x']],df_b,on='name_x')
 
             total_df = df_ab[['name_x', 'code', 'close_x', 'close_y', 'ma60_x', 'ma60_y', 'ma120_x', 'ma120_y', 'price_x', 'price_y', 'date_x','volume_z', 'price_diff']]
-            total_df.to_excel(path_total+strdate+'.xlsx')    
+            filter_total_df = filter_df_ab[['name_x', 'code', 'close_x', 'close_y', 'ma60_x', 'ma60_y', 'ma120_x', 'ma120_y', 'price_x', 'price_y', 'date_x','volume_z', 'price_diff']]
+            total_df.to_excel(path_total+strdate+'.xlsx')
+            filter_total_df.to_excel(path_total_f+strdate+'.xlsx') 
 
 class to_report:
     select_query = "select * from market_good where Date >="
