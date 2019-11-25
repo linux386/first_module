@@ -167,9 +167,9 @@ class analysis:
         df2 = pd.DataFrame() 
         for i in name:
             #print(i)
-            df=select_stock(i,select_start)
+            df=select_stock(i,select_start)  ## 종목별 dataframe
             #print(df)
-            pure_df = pure_df.append(df)
+            pure_df = pure_df.append(df)  ## 전종목 dataframe
             ma(df)
 
             source = MinMaxScaler()
@@ -179,9 +179,9 @@ class analysis:
             df1.columns=['close','ma60','ma120','volume','name']
             df1[['date','code']] = df[['date','code']]
             #print(df1)
-            df2 = df2.append(df1)
+            df2 = df2.append(df1)   ## 전종목 close, ma60, ma120, volume 표준화 (MinMaxScaler())
 
-        pure_df.columns = map(str.lower, pure_df.columns) ## 
+        pure_df.columns = map(str.lower, pure_df.columns) ## columns 명을 소문자로 
 
         last_df = df2.loc[df2['date'] == datelist[-1]]
         last_close_df = last_df[last_df['close'] < 0.1]
@@ -191,13 +191,13 @@ class analysis:
         last_price_df = pure_df.loc[pure_df['date'] == datelist[-1]]
     
         for i in datelist:
-            first_df = df2.loc[df2['date'] == i]
-            first_price_df = pure_df.loc[pure_df['date'] == i]
-            one_close_df = pd.merge(first_df,last_close_df,on='code')
-            one_df = pd.merge(first_df,last_ma_df,on='code')
+            first_df = df2.loc[df2['date'] == i]             ##  표준화 dataframe 
+            first_price_df = pure_df.loc[pure_df['date'] == i]  ##  stock dataframe (open,close, high, low, volume 등)
+            one_close_df = pd.merge(first_df,last_close_df,on='code') ##  표준화 dataframe 중 close < 0.1 
+            one_df = pd.merge(first_df,last_ma_df,on='code')          ##  표준화 dataframe 중 ma120 < 0.1 and close > ma60 > ma120
             reset_close_df = last_close_df.reset_index()
             reset_ma_df = last_ma_df.reset_index()
-            one_close_df['code']= reset_close_df['code']
+            one_close_df['code']= reset_close_df['code']   
             one_df['code']= reset_ma_df['code']
             close_df = pd.merge(first_price_df[['close','code']],one_close_df,on='code')
             ma_df = pd.merge(first_price_df[['close','code']],one_df,on='code')        
@@ -218,27 +218,27 @@ class analysis:
             strdate = i.strftime('%Y-%m-%d')
 
             if select_start == select_start_a:
-                ma120_df.to_excel(path_total_a+strdate+'.xlsx')
-                price_df.to_excel(path_total_c+strdate+'.xlsx')
+                ma120_df.to_excel(path_total_a+strdate+'.xlsx')  ##  표준화 dataframe 중 ma120 < 0.1 and close > ma60 > ma120 (from 2019.01.01)
+                price_df.to_excel(path_total_c+strdate+'.xlsx')  ##  표준화 dataframe 중 close < 0.1 
             else:
-                ma120_df.to_excel(path_total_b+strdate+'.xlsx')
-                second_df.to_excel(path+strdate+'.xlsx')
+                ma120_df.to_excel(path_total_b+strdate+'.xlsx')  ##  표준화 dataframe 중 ma120 < 0.1 and close > ma60 > ma120 (from 2008.01.01)
+                second_df.to_excel(path+strdate+'.xlsx')         ##  표준화 dataframe 
 
     def total_ab_intersection(self ):
         datelist = self.datelist
         for i in datelist:
             strdate = i.strftime('%Y-%m-%d')
             df_a = pd.read_excel(path_total_a+strdate+'.xlsx')
-            filter_df_a = df_a[df_a['close_y'] < 0.2]
-            df_b = pd.read_excel(path_total_b+strdate+'.xlsx')
+            filter_df_a = df_a[df_a['close_y'] < 0.2]   ## total_a (from 2019) 최종날짜 close가 < 0.2  
+            df_b = pd.read_excel(path_total_b+strdate+'.xlsx')  
             #df_ab = pd.DataFrame()
-            df_ab = pd.merge(df_a[['name_x']],df_b,on='name_x')
-            filter_df_ab = pd.merge(filter_df_a[['name_x']],df_b,on='name_x')
+            df_ab = pd.merge(df_a[['name_x']],df_b,on='name_x')  ## total_b (from 2008) and total_a(from 2019) 교집합
+            filter_df_ab = pd.merge(filter_df_a[['name_x']],df_b,on='name_x') ## total_b (from 2008) and total_a['close_y'] < 0.2 교집합
 
             total_df = df_ab[['name_x', 'code', 'close_x', 'close_y', 'ma60_x', 'ma60_y', 'ma120_x', 'ma120_y', 'price_x', 'price_y', 'date_x','volume_z', 'price_diff']]
             filter_total_df = filter_df_ab[['name_x', 'code', 'close_x', 'close_y', 'ma60_x', 'ma60_y', 'ma120_x', 'ma120_y', 'price_x', 'price_y', 'date_x','volume_z', 'price_diff']]
-            total_df.to_excel(path_total+strdate+'.xlsx')
-            filter_total_df.to_excel(path_total_f+strdate+'.xlsx') 
+            total_df.to_excel(path_total+strdate+'.xlsx')  ## total_b (from 2008) and total_a(from 2019) 교집합
+            filter_total_df.to_excel(path_total_f+strdate+'.xlsx') ## total_b (from 2008) and total_a['close_y'] < 0.2 교집합
 
 class to_report:
     select_query = "select * from market_good where Date >="
@@ -465,14 +465,14 @@ class to_report:
 
                     plt.figure(figsize=(16,4))
                     for i in range(len(name)):
-                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100)
+                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100,label=name[i])
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
 
                     plt.figure(figsize=(16,4))
                     for i in range(len(name)):
                         volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
-                        plt.plot(df1[name[i]+'거래량']/volume_average)
+                        plt.plot(df1[name[i]+'거래량']/volume_average, label=name[i])
                         #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)  
@@ -509,7 +509,7 @@ class to_report:
                     colors = ['red','green','blue','black']
                     for i in range(len(money_name)):
                         plt.subplot(2,2,i+1)
-                        plt.plot(df1[money_name[i]]/df1[money_name[i]].loc[money_df.index[0]]*100, color=colors[i])
+                        plt.plot(df1[money_name[i]]/df1[money_name[i]].loc[money_df.index[0]]*100, color=colors[i],label=money_name[i])
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
                         #plt.show()
@@ -529,7 +529,7 @@ class to_report:
                     for i in range(len(program_name)):
 
                         plt.subplot(2,2,i+1)
-                        plt.plot(df1[program_name[i]],color=colors[i])
+                        plt.plot(df1[program_name[i]],color=colors[i],label=program_name[i])
 
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
@@ -559,7 +559,7 @@ class to_report:
                     colors = ['red','green','blue','black']
                     plt.figure(figsize=(16,4))    
                     for i in range(len(basis_name)):
-                        plt.plot(basis_df1[basis_name[i]]/basis_df1[basis_name[i]].loc[basis_df.index[0]]*100)
+                        plt.plot(basis_df1[basis_name[i]]/basis_df1[basis_name[i]].loc[basis_df.index[0]]*100,label=basis_name[i])
 
                     plt.legend(loc=0)
                     plt.grid(True,color='0.7',linestyle=':',linewidth=1)
@@ -567,7 +567,7 @@ class to_report:
 
                     plt.figure(figsize=(16,4))    
                     for i in range(len(name1)):
-                        plt.plot(df1[name1[i]]/df1[name1[i]].loc[df.index[0]]*100)
+                        plt.plot(df1[name1[i]]/df1[name1[i]].loc[df.index[0]]*100,label=name1[i])
 
                     plt.legend(loc=0)
                     plt.grid(True,color='0.7',linestyle=':',linewidth=1)
@@ -576,7 +576,7 @@ class to_report:
                     plt.figure(figsize=(16,4)) 
                     for i in range(len(name2)):
                         plt.subplot(2,2,i+1)
-                        plt.plot(df1[name2[i]]/df1[name2[i]].loc[df.index[0]]*100,color = colors[i])
+                        plt.plot(df1[name2[i]]/df1[name2[i]].loc[df.index[0]]*100,color = colors[i],label=name2[i])
 
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
