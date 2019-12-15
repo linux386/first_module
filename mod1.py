@@ -67,7 +67,7 @@ def last_page(source):
     return last
 
 def select_stock(name,date):
-    select_query = "select * from market_good where Name= "
+    select_query = "select * from market where Name= "
     date_query = "Date > "    
     var = select_query +"'"+name+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
     df = pd.read_sql(var, engine)
@@ -288,7 +288,7 @@ class to_report:
     def get_graph(self, choice=1):
         graph_name_list=['stock','money', 'program','future']
         date='2019-01-01'
-        future_date='2019-09-12'
+        future_date='2019-12-11'  ##  선물마감 하루전
 
         if choice == 1:
             graph = input("그래프종류를 입력하세요 sample: 'money' or 'program' or 'stock' or 'future':  ")
@@ -1359,7 +1359,7 @@ class to_excel:
             df1 = pd.DataFrame()
             for i in range(1,7):
                 # 다음 주식 요청 URL
-                url = "http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page="+str(i)
+                url = "http://finance.daum.net/api/future/KR4101Q30005/days?pagination=true&page="+str(i)
 
                 res = req.urlopen(req.Request(url, headers=headers)).read().decode('utf-8')
 
@@ -1401,13 +1401,13 @@ class to_excel:
             }
 
 
-            url = "http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page=1"  #KR4011PC002 "선물 코스피 200지수 12월물" 코드는 구글검색이용
+            url = "http://finance.daum.net/api/future/KR4101Q30005/days?pagination=true&page=1"  #KR4011PC002 "선물 코스피 200지수 12월물" 코드는 구글검색이용
             res = req.urlopen(req.Request(url, headers=headers)).read().decode('utf-8')
 
             df1 = pd.DataFrame()
             for i in range(1,3):
                 # 다음 주식 요청 URL
-                url = "http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page="+str(i)
+                url = "http://finance.daum.net/api/future/KR4101Q30005/days?pagination=true&page="+str(i)
 
                 res = req.urlopen(req.Request(url, headers=headers)).read().decode('utf-8')
 
