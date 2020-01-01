@@ -67,7 +67,7 @@ def last_page(source):
     return last
 
 def select_stock(name,date):
-    select_query = "select * from market where Name= "
+    select_query = "select * from market_good where Name= "
     date_query = "Date > "    
     var = select_query +"'"+name+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
     df = pd.read_sql(var, engine)
@@ -124,6 +124,7 @@ def close_vol_ma(df,select):
     df1 = df1.set_index(df['date'])
     df1.plot(figsize=(16,4))
     plt.title(df['name'][0])
+    plt.grid(True)
     plt.show()
     
 def make_dataset(name,date):
