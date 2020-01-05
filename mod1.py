@@ -66,6 +66,13 @@ def last_page(source):
     print(last)
     return last
 
+def select_market(name,date):
+    select_query = "select * from "
+    date_query = " where Date > "    
+    var = select_query + name + date_query+"'"+date+"'" 
+    df = pd.read_sql(var, engine)
+    return df
+
 def select_stock(name,date):
     select_query = "select * from market_good where Name= "
     date_query = "Date > "    
@@ -114,18 +121,58 @@ def ma(DataFrame):
     talib_ma120 = ta.MA(df, timeperiod=120)
     df['ma120'] = talib_ma120  
 
-def close_vol_ma(df,select):
+def close_ma(df,select1,select2):
     ma(df)
 
     source = MinMaxScaler()
-    data = source.fit_transform(df[['close',select,'volume']].values)
+    data = source.fit_transform(df[['close',select1,select2]].values)
     df1 = pd.DataFrame(data)
-    df1.columns=['close',select,'volume']
+    df1.columns=['close',select1,select2]
     df1 = df1.set_index(df['date'])
     df1.plot(figsize=(16,4))
     plt.title(df['name'][0])
     plt.grid(True)
     plt.show()
+
+def close_ma_vol(df,select1,select2,select3):
+    ma(df)
+
+    source = MinMaxScaler()
+    data = source.fit_transform(df[['close',select1,select2,select3]].values)
+    df1 = pd.DataFrame(data)
+    df1.columns=['close',select1,select2,select3]
+    df1 = df1.set_index(df['date'])
+    df1.plot(figsize=(16,4))
+    plt.title(df['name'][0])
+    plt.grid(True)
+    plt.show()    
+
+def market_ma(df,select1,select2):
+    ma(df)
+
+    source = MinMaxScaler()
+    data = source.fit_transform(df[['close',select1,select2]].values)
+    df1 = pd.DataFrame(data)
+    df1.columns=['close',select1,select2]
+    df1 = df1.set_index(df['date'])
+    df1.plot(figsize=(16,4))
+    plt.title(df['market'][0])
+    plt.grid(True)
+    plt.show()
+
+def market_ma_vol(df,select1,select2,select3):
+    ma(df)
+
+    source = MinMaxScaler()
+    data = source.fit_transform(df[['close',select1,select2,select3]].values)
+    df1 = pd.DataFrame(data)
+    df1.columns=['close',select1,select2,select3]
+    df1 = df1.set_index(df['date'])
+    df1.plot(figsize=(16,4))
+    plt.title(df['market'][0])
+    plt.grid(True)
+    plt.show()        
+
     
 def make_dataset(name,date):
     col = ['ma5', 'ma10', 'ma15', 'ma20', 'ma30', 'ma60', 'ma120','volume', 'close']
@@ -288,7 +335,7 @@ class to_report:
 
     def get_graph(self, choice=1):
         graph_name_list=['stock','money', 'program','future']
-        date='2019-01-01'
+        date='2018-01-01'
         future_date='2019-12-11'  ##  선물마감 하루전
 
         if choice == 1:
@@ -431,6 +478,11 @@ class to_report:
 
                 
         else :
+            
+            df = select_market('kospi','2015-01-01')
+            market_ma(df,'ma60','ma120')
+            df = select_market('kosdaq','2015-01-01')
+            market_ma(df,'ma60','ma120')
             
             kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 2", engine)
             yesterday = str(kpi200_df['Date'][1])
