@@ -34,6 +34,7 @@ rc('font', family=font_name)
 today = datetime.now()
 real_yesterday = (today-timedelta(1)).strftime('%Y-%m-%d')
 real_today = today.strftime('%Y-%m-%d')
+date_list = ['2008-01-01','2013-01-01','2018-01-01','2019-01-01']
 
 now = dt.datetime.today().strftime('%Y-%m-%d')
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
@@ -121,6 +122,23 @@ def ma(DataFrame):
     talib_ma120 = ta.MA(df, timeperiod=120)
     df['ma120'] = talib_ma120  
 
+    
+def volume_graph(name, date_list):
+    for i in name:
+        for j in date_list:
+            df = select_stock(i, j)
+            close_ma_vol(df,'ma60','ma120','volume')
+        df=select_stock(i,'2019-07-01')
+        close_ma_vol(df,'ma10','ma20','volume')
+        
+def close_graph(name, date_list):
+    for i in name:
+        for j in date_list:
+            df = select_stock(i, j)
+            close_ma(df,'ma60','ma120')
+        df=select_stock(i,'2019-07-01')
+        close_ma(df,'ma10','ma20')
+    
 def close_ma(df,select1,select2):
     ma(df)
 
