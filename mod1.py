@@ -10,6 +10,7 @@ import sys
 from fake_useragent import UserAgent
 import FinanceDataReader as fdr
 import pandas as pd
+import numpy as np
 from bs4 import BeautifulSoup
 import datetime as dt
 from sklearn.preprocessing import MinMaxScaler
@@ -19,6 +20,7 @@ import urllib.request as req
 import sqlalchemy 
 import pymysql
 import talib.abstract as ta
+from talib import RSI, BBANDS
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning) 
 from pandas.core.common import SettingWithCopyWarning
@@ -308,7 +310,7 @@ class analysis:
 
 class to_report:
     select_query = "select * from market_good where Date >="
-    volume_query = "&& Volume >  500000"
+    volume_query = "&& Volume >  10000"
     def stock_select_with_Volume_Close(self,choice = 1):
     
         if choice == 1:
@@ -343,9 +345,9 @@ class to_report:
         df4 = df3.sort_values(by=['Close','Volume'],ascending=False)
         df3 = df3.reset_index(drop=True)
 
-        df3 = df3[:15]
+        df3 = df3[:50]
         df4 = df4.reset_index(drop=True)
-        df4 = df4[:15]
+        df4 = df4[:50]
         df3.to_excel(path_volume+today+'.xlsx', encoding='utf-8')
         df4.to_excel(path_price+today+'.xlsx', encoding='utf-8')        
         display(df3)
@@ -726,8 +728,8 @@ class to_sql:
                     
                     #year=year[2:]
                     start_date = year+'-'+mm+'-'+dd
-                    if start_date == '2019-10-32':
-                        start_date = '2019-11-01'
+                    if start_date == '2020-01-32':
+                        start_date = '2020-02-01'
                     print('\n market start_date:{}'.format(start_date))
 
                     code_list = data['종목코드'].tolist()
