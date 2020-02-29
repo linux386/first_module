@@ -355,7 +355,7 @@ class to_report:
 
     def get_graph(self, choice=1):
         graph_name_list=['stock','money', 'program','future']
-        date='2018-01-01'
+        date='2018-01-10' # 종목별 상장일자보다 커야한다     
         future_date='2019-12-11'  ##  선물마감 하루전
 
         if choice == 1:
@@ -538,7 +538,7 @@ class to_report:
 
                     plt.figure(figsize=(16,4))
                     for i in range(len(name)):
-                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100,label=name[i])
+                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100,label=name[i])  # 종목별 df['Date'][0]  < date보다 커야한다 
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
 
