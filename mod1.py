@@ -10,6 +10,7 @@ import sys
 from fake_useragent import UserAgent
 import FinanceDataReader as fdr
 import pandas as pd
+import numpy as np
 from bs4 import BeautifulSoup
 import datetime as dt
 from sklearn.preprocessing import MinMaxScaler
@@ -19,6 +20,7 @@ import urllib.request as req
 import sqlalchemy 
 import pymysql
 import talib.abstract as ta
+from talib import RSI, BBANDS
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning) 
 from pandas.core.common import SettingWithCopyWarning
@@ -34,6 +36,7 @@ rc('font', family=font_name)
 today = datetime.now()
 real_yesterday = (today-timedelta(1)).strftime('%Y-%m-%d')
 real_today = today.strftime('%Y-%m-%d')
+date_list = ['2008-01-01','2013-01-01','2018-01-01','2019-01-01']
 
 now = dt.datetime.today().strftime('%Y-%m-%d')
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
@@ -65,6 +68,13 @@ def last_page(source):
     last = int(last)
     print(last)
     return last
+
+def select_market(name,date):
+    select_query = "select * from "
+    date_query = " where Date > "    
+    var = select_query + name + date_query+"'"+date+"'" 
+    df = pd.read_sql(var, engine)
+    return df
 
 def select_stock(name,date):
     select_query = "select * from market_good where Name= "
@@ -114,18 +124,75 @@ def ma(DataFrame):
     talib_ma120 = ta.MA(df, timeperiod=120)
     df['ma120'] = talib_ma120  
 
-def close_vol_ma(df,select):
+    
+def volume_graph(name, date_list):
+    for i in name:
+        for j in date_list:
+            df = select_stock(i, j)
+            close_ma_vol(df,'ma60','ma120','volume')
+        df=select_stock(i,'2019-07-01')
+        close_ma_vol(df,'ma10','ma20','volume')
+        
+def close_graph(name, date_list):
+    for i in name:
+        for j in date_list:
+            df = select_stock(i, j)
+            close_ma(df,'ma60','ma120')
+        df=select_stock(i,'2019-07-01')
+        close_ma(df,'ma10','ma20')
+    
+def close_ma(df,select1,select2):
     ma(df)
 
     source = MinMaxScaler()
-    data = source.fit_transform(df[['close',select,'volume']].values)
+    data = source.fit_transform(df[['close',select1,select2]].values)
     df1 = pd.DataFrame(data)
-    df1.columns=['close',select,'volume']
+    df1.columns=['close',select1,select2]
     df1 = df1.set_index(df['date'])
     df1.plot(figsize=(16,4))
     plt.title(df['name'][0])
     plt.grid(True)
     plt.show()
+
+def close_ma_vol(df,select1,select2,select3):
+    ma(df)
+
+    source = MinMaxScaler()
+    data = source.fit_transform(df[['close',select1,select2,select3]].values)
+    df1 = pd.DataFrame(data)
+    df1.columns=['close',select1,select2,select3]
+    df1 = df1.set_index(df['date'])
+    df1.plot(figsize=(16,4))
+    plt.title(df['name'][0])
+    plt.grid(True)
+    plt.show()    
+
+def market_ma(df,select1,select2):
+    ma(df)
+
+    source = MinMaxScaler()
+    data = source.fit_transform(df[['close',select1,select2]].values)
+    df1 = pd.DataFrame(data)
+    df1.columns=['close',select1,select2]
+    df1 = df1.set_index(df['date'])
+    df1.plot(figsize=(16,4))
+    plt.title(df['market'][0])
+    plt.grid(True)
+    plt.show()
+
+def market_ma_vol(df,select1,select2,select3):
+    ma(df)
+
+    source = MinMaxScaler()
+    data = source.fit_transform(df[['close',select1,select2,select3]].values)
+    df1 = pd.DataFrame(data)
+    df1.columns=['close',select1,select2,select3]
+    df1 = df1.set_index(df['date'])
+    df1.plot(figsize=(16,4))
+    plt.title(df['market'][0])
+    plt.grid(True)
+    plt.show()        
+
     
 def make_dataset(name,date):
     col = ['ma5', 'ma10', 'ma15', 'ma20', 'ma30', 'ma60', 'ma120','volume', 'close']
@@ -243,7 +310,7 @@ class analysis:
 
 class to_report:
     select_query = "select * from market_good where Date >="
-    volume_query = "&& Volume >  500000"
+    volume_query = "&& Volume >  10000"
     def stock_select_with_Volume_Close(self,choice = 1):
     
         if choice == 1:
@@ -278,9 +345,9 @@ class to_report:
         df4 = df3.sort_values(by=['Close','Volume'],ascending=False)
         df3 = df3.reset_index(drop=True)
 
-        df3 = df3[:15]
+        df3 = df3[:50]
         df4 = df4.reset_index(drop=True)
-        df4 = df4[:15]
+        df4 = df4[:50]
         df3.to_excel(path_volume+today+'.xlsx', encoding='utf-8')
         df4.to_excel(path_price+today+'.xlsx', encoding='utf-8')        
         display(df3)
@@ -431,6 +498,11 @@ class to_report:
 
                 
         else :
+            
+            df = select_market('kospi','2015-01-01')
+            market_ma(df,'ma60','ma120')
+            df = select_market('kosdaq','2015-01-01')
+            market_ma(df,'ma60','ma120')
             
             kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 2", engine)
             yesterday = str(kpi200_df['Date'][1])
@@ -656,8 +728,8 @@ class to_sql:
                     
                     #year=year[2:]
                     start_date = year+'-'+mm+'-'+dd
-                    if start_date == '2019-10-32':
-                        start_date = '2019-11-01'
+                    if start_date == '2020-01-32':
+                        start_date = '2020-02-01'
                     print('\n market start_date:{}'.format(start_date))
 
                     code_list = data['종목코드'].tolist()
