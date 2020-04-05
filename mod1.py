@@ -356,7 +356,7 @@ class to_report:
 
     def get_graph(self, choice=1):
         graph_name_list=['stock','money', 'program','future']
-        date='2019-01-01'
+        date='2018-01-10' # 종목별 상장일자보다 커야한다     
         future_date='2019-12-11'  ##  선물마감 하루전
 
         if choice == 1:
@@ -539,7 +539,7 @@ class to_report:
 
                     plt.figure(figsize=(16,4))
                     for i in range(len(name)):
-                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100,label=name[i])
+                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100,label=name[i])  # 종목별 df['Date'][0]  < date보다 커야한다 
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)
 
@@ -721,9 +721,22 @@ class to_sql:
                     market_df = str(market_df['Date'])
                     print(market_df)
                     start_date =  market_df[5:15]
+<<<<<<< HEAD
                     start = datetime.strptime(start_date, "%Y-%m-%d")
                     start_date= (start + timedelta(days=1)).strftime('%Y-%m-%d') ## datetime.timedelta 함수를 사용혀여 3.31 -> 4.1일로 일자변경
                                         
+=======
+                    year = start_date.split('-')[0]
+                    mm = start_date.split('-')[1]
+                    dd = start_date.split('-')[2]
+                    dd = int(dd)+1
+                    dd = str(dd)
+                    
+                    #year=year[2:]
+                    start_date = year+'-'+mm+'-'+dd
+                    if start_date == '2020-01-32':
+                        start_date = '2020-02-01'
+>>>>>>> e000f4b215a9131ceb88373fddd46be54cd44175
                     print('\n market start_date:{}'.format(start_date))
 
                     code_list = data['종목코드'].tolist()
