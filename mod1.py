@@ -218,17 +218,18 @@ class analysis:
     select_start_a = '2019-01-01'
     select_start_b = '2008-01-01'
     
-    select_query = "select * from market where Name='hrs' and Date >= '2019-10-01' "
+    select_query = "select * from market where Name='hrs' and Date >= '2020-02-20' "
     df3 = pd.read_sql(select_query, engine)
 
     df3 = df3['Date']
     datelist = df3.to_list()    
 
     def search_stock(self,name,select_start):
-        name = self.name 
+        self.name = name
         select_start_a = self.select_start_a
         select_start_b = self.select_start_b
         datelist = self.datelist
+
         #print(name)
         print(select_start)
         pure_df = pd.DataFrame()
@@ -720,20 +721,13 @@ class to_sql:
                     market_df = str(market_df['Date'])
                     print(market_df)
                     start_date =  market_df[5:15]
-                    year = start_date.split('-')[0]
-                    mm = start_date.split('-')[1]
-                    dd = start_date.split('-')[2]
-                    dd = int(dd)+1
-                    dd = str(dd)
-                    
-                    #year=year[2:]
-                    start_date = year+'-'+mm+'-'+dd
-                    if start_date == '2020-01-32':
-                        start_date = '2020-02-01'
+                    start = datetime.strptime(start_date, "%Y-%m-%d")
+                    start_date= (start + timedelta(days=1)).strftime('%Y-%m-%d') ## datetime.timedelta 함수를 사용혀여 3.31 -> 4.1일로 일자변경
+                                        
                     print('\n market start_date:{}'.format(start_date))
 
                     code_list = data['종목코드'].tolist()
-                    code_list = [str(item).zfill(6) for item in code_list]
+                    code_list = [str(item).zfill(6) for item in code_list]  ### 종목코드를 6자리로 밎춤
                     name_list = data['종목명'].tolist()
 
                     # 코스피 상장종목 전체
