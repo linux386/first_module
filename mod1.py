@@ -4,9 +4,9 @@ Spyder Editor
 
 This is a temporary script file.
 """
-import io
 import json
-import sys
+import os,glob,shutil,io,sys
+from pykrx.stock.api import *
 from fake_useragent import UserAgent
 import FinanceDataReader as fdr
 import pandas as pd
@@ -51,6 +51,7 @@ path_total_f = 'd:\\stockdata\\close_ma120\\total_filter_'
 path_total_a = 'd:\\stockdata\\close_ma120\\total_a_'
 path_total_b = 'd:\\stockdata\\close_ma120\\total_b_'
 path_total_c = 'd:\\stockdata\\close_ma120\\total_c_'
+source_dir = 'd:\\stockdata\\close_ma120'
 
 def from_excel_analysis(path,today,start):
     df = pd.read_excel(path+today+'.xlsx')
@@ -210,7 +211,7 @@ def make_dataset(name,date):
     return df1  
 
 class analysis:
-
+    source_dir = 'd:\\stockdata\\close_ma120'
     df = all_stock('2019-10-10')
     df = df['Name']
     name = df.to_list()
@@ -294,6 +295,7 @@ class analysis:
                 second_df.to_excel(path+strdate+'.xlsx')         ##  표준화 dataframe 
 
     def total_ab_intersection(self ):
+        
         datelist = self.datelist
         for i in datelist:
             strdate = i.strftime('%Y-%m-%d')
@@ -308,7 +310,29 @@ class analysis:
             filter_total_df = filter_df_ab[['name_x', 'code', 'close_x', 'close_y', 'ma60_x', 'ma60_y', 'ma120_x', 'ma120_y', 'price_x', 'price_y', 'date_x','volume_z', 'price_diff']]
             total_df.to_excel(path_total+strdate+'.xlsx')  ## total_b (from 2008) and total_a(from 2019) 교집합
             filter_total_df.to_excel(path_total_f+strdate+'.xlsx') ## total_b (from 2008) and total_a['close_y'] < 0.2 교집합
+            
+        programtrend_df = pd.read_sql("select Date from programtrend order by Date desc limit 1", engine)
+        programtrend_df = str(programtrend_df['Date'])
+        until_date = programtrend_df[5:15]
 
+        start = datetime.strptime(until_date , "%Y-%m-%d")
+        until_date= (start + timedelta(days=0)).strftime('%m%d')  ##  'yy-mm-dd' 
+        os.mkdir(source_dir+'\\2020\\2020-04\\'+until_date)
+        
+        
+programtrend_df = pd.read_sql("select Date from programtrend order by Date desc limit 1", engine)
+programtrend_df = str(programtrend_df['Date'])
+until_date = programtrend_df[5:15]
+
+start = datetime.strptime(until_date , "%Y-%m-%d")
+until_date= (start + timedelta(days=0)).strftime('%m%d')  ##  'yy-mm-dd' 
+os.mkdir(source_dir+'\\2020\\2020-04\\'+until_date)
+        
+
+for filename in glob.glob(os.path.join(source_dir , '*.*')):
+    shutil.copy(filename, source_dir+'\\2020\\2020-04\\'+until_date)
+            
+            
 class to_report:
     select_query = "select * from market_good where Date >="
     volume_query = "&& Volume >  10000"
@@ -657,8 +681,12 @@ class to_report:
                          
                         
 class to_sql:
-    excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','money_trend.xlsx','program_trend.xlsx','market.xlsx']
-    sql_table_name_list=['kpi200','investortrend','moneytrend','programtrend','market']
+    excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','money_trend.xlsx','program_trend.xlsx','kospi_sector.xlsx','kosdaq_sector.xlsx','kospi.xlsx','kosdaq.xlsx','market.xlsx']
+    sql_table_name_list=['kpi200','investortrend','moneytrend','programtrend','kospi_sector','kosdaq_sector','kospi','kosdaq','market']
+    
+    
+    #excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','money_trend.xlsx','program_trend.xlsx','market.xlsx']
+    #sql_table_name_list=['kpi200','investortrend','moneytrend','programtrend','market']
     
     def excel_to_sql(self, choice = 1):
         excel_name_list=self.excel_name_list
@@ -684,7 +712,15 @@ class to_sql:
             elif file_name=='program_trend.xlsx':
                 table_name = 'programtrend'
                 df.columns=['Date', '차익', '비차익','전체']
-               
+           
+            elif file_name=='kospi_sector.xlsx':
+                table_name = 'kospi_sector'
+                df.columns=['Date', 'sectorName', 'changeRate', 'first', 'second']
+                
+            elif file_name=='kosdaq_sector.xlsx':
+                table_name = 'kosdaq_sector'
+                df.columns=['Date', 'sectorName', 'changeRate', 'first', 'second']                
+        
             elif file_name=='market.xlsx':
                 data = pd.read_excel('d:\\market.xlsx')
                 start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
@@ -803,11 +839,14 @@ class to_sql:
         
 
 class to_excel:
-    investor_trend_url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2020601&sosok=&page='
+    investor_trend_url = 'http://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate=2021601&sosok=&page='
     money_trend_url = 'http://finance.naver.com/sise/sise_deposit.nhn?&page='
     kpi200_url = 'https://finance.naver.com/sise/sise_index_day.nhn?code=KPI200&page='
-    program_trend_url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20200315&sosok=&page='    
+    program_trend_url = 'https://finance.naver.com/sise/programDealTrendDay.nhn?bizdate=20210315&sosok=&page='    
     future_url = 'http://finance.daum.net/api/future/KR4101PC0002/days?pagination=true&page='
+    kospi_sector_url = "http://finance.daum.net/api/quotes/sectors?fieldName=&order=&perPage=&market=KOSPI&page=&changes=UPPER_LIMIT%2CRISE%2CEVEN%2CFALL%2CLOWER_LIMIT"
+    kosdaq_sector_url = "http://finance.daum.net/api/quotes/sectors?fieldName=&order=&perPage=&market=KOSDAQ&page=&changes=UPPER_LIMIT%2CRISE%2CEVEN%2CFALL%2CLOWER_LIMI"
+
     
     def get_investor_trend(self):
         url  = self.investor_trend_url 
@@ -895,22 +934,15 @@ class to_excel:
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
 
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date , "%Y-%m-%d")
+            until_date= (start + timedelta(days=0)).strftime('%y-%m-%d')
     
         else:
             kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 1", engine)
             kpi200_df = str(kpi200_df['Date'])
             until_date = kpi200_df[5:15]
-
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date, "%Y-%m-%d")
+            until_date= (start + timedelta(days=1)).strftime('%y-%m-%d') ## datetime.timedelta 함수를 사용혀여 3.31 -> 4.1일로 일자변경
     
     
         # 날짜를 받을 리스트
@@ -1041,22 +1073,16 @@ class to_excel:
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_today
 
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date , "%Y-%m-%d")
+            until_date= (start + timedelta(days=0)).strftime('%y-%m-%d')
     
         else:
             moneytrend_df = pd.read_sql("select Date from moneytrend order by Date desc limit 1", engine)
             moneytrend_df = str(moneytrend_df['Date'])
             until_date = moneytrend_df[5:15]
 
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date, "%Y-%m-%d")
+            until_date= (start + timedelta(days=1)).strftime('%y-%m-%d') ## datetime.timedelta 함수를 사용혀여 3.31 -> 4.1일로 일자변경
     
         #df = DataFrame(columns = ['고객예탁금', '신용잔고','주식형 펀드','혼합형 펀드','채권형 펀드'])
 
@@ -1195,22 +1221,16 @@ class to_excel:
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
 
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            #year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date , "%Y-%m-%d")
+            until_date= (start + timedelta(days=0)).strftime('%Y-%m-%d')
     
         else:
             kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 1", engine)
             kpi200_df = str(kpi200_df['Date'])
             until_date = kpi200_df[5:15]
 
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            #year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date , "%Y-%m-%d")
+            until_date= (start + timedelta(days=1)).strftime('%Y-%m-%d')
     
         # 날짜를 받을 리스트
         date_list = []
@@ -1345,22 +1365,16 @@ class to_excel:
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
 
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date , "%Y-%m-%d")
+            until_date= (start + timedelta(days=0)).strftime('%y-%m-%d')  ##  'yy-mm-dd' 
     
         else:
             programtrend_df = pd.read_sql("select Date from programtrend order by Date desc limit 1", engine)
             programtrend_df = str(programtrend_df['Date'])
             until_date = programtrend_df[5:15]
 
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date , "%Y-%m-%d")
+            until_date= (start + timedelta(days=0)).strftime('%y-%m-%d')  ##  'yy-mm-dd' 
     
         # 날짜를 받을 리스트
         date_list = []
@@ -1451,11 +1465,8 @@ class to_excel:
             future_df = str(future_df['Date'])
             until_date = future_df[5:15]
 
-            year = until_date.split('-')[0]
-            mm = until_date.split('-')[1]
-            dd = until_date.split('-')[2]
-            #year=year[2:]
-            until_date = year+'-'+mm+'-'+dd
+            start = datetime.strptime(until_date , "%Y-%m-%d")
+            until_date= (start + timedelta(days=0)).strftime('%Y-%m-%d')  ##  'yy-mm-dd' 
             until_date = datetime.strptime(until_date, '%Y-%m-%d').date() ## str 을  datetime.date로 type 변경
 
             # Fake Header 정보
@@ -1494,6 +1505,128 @@ class to_excel:
             df2.to_excel(path, encoding='utf-8')
             #df2            
 
+    def sector(self):
+        
+        # Fake Header 정보
+        ua = UserAgent()
+        
+        # 헤더 선언
+        headers = {
+            'User-Agent': ua.ie,
+            'referer': 'http://finance.daum.net/domestic/all_stocks'
+        }        
+        
+        kospi_sector_url=self.kospi_sector_url
+        kosdaq_sector_url=self.kosdaq_sector_url
+        
+        # 요청
+        kospi_sector_res = req.urlopen(req.Request(kospi_sector_url, headers=headers)).read().decode('utf-8')
+        kosdaq_sector_res = req.urlopen(req.Request(kosdaq_sector_url, headers=headers)).read().decode('utf-8')
+        # 응답 데이터 확인(Json Data)
+        # print('res', res)
+
+        # 응답 데이터 str -> json 변환 및 data 값 저장
+        kospi_sector = json.loads(kospi_sector_res)['data']
+        kosdaq_sector = json.loads(kosdaq_sector_res)['data']
+        # 중간 확인
+        #print('중간 확인 : ', rank_json, '\n')
+
+        #for elm in rank_json:
+            # print(type(elm)) #Type 확인
+            #print('순위 : {}, 금액 : {}, 회사명 : {}'.format(elm['rank'], elm['tradePrice'], elm['name']), )
+
+        kospi_sector_df = pd.DataFrame(kospi_sector)
+        kosdaq_sector_df = pd.DataFrame(kosdaq_sector)
+
+        kospi_name=[]
+        kosdaq_name=[]
+
+        for i in range(len(kospi_sector_df.index)):
+            stock_name = [kospi_sector_df['includedStocks'][i][0]['name'],kospi_sector_df['includedStocks'][i][1]['name']]
+            kospi_name.append(stock_name)
+        kospi_name_df=pd.DataFrame(kospi_name)
+
+        kospi_sector_df = kospi_sector_df[['date','sectorName','change','changeRate']]
+        kospi_sector_df['changeRate'] = kospi_sector_df['changeRate']*100
+
+        kospi_sector_df = kospi_sector_df.sort_values(['change','changeRate'], ascending=[False,False])
+
+        for i in range(len(kosdaq_sector_df.index)):
+            stock_name = [kosdaq_sector_df['includedStocks'][i][0]['name'],kosdaq_sector_df['includedStocks'][i][1]['name']]
+            kosdaq_name.append(stock_name)
+        kosdaq_name_df=pd.DataFrame(kosdaq_name)
+
+        kosdaq_sector_df = kosdaq_sector_df[['date','sectorName','change','changeRate']]
+        kosdaq_sector_df['changeRate'] = kosdaq_sector_df['changeRate']*100
+
+
+        kospi_sector_df = kospi_sector_df.join(kospi_name_df)
+        kosdaq_sector_df = kosdaq_sector_df.join(kosdaq_name_df)
+
+        kospi_sector_df.columns=('date', 'sectorName', 'change', 'changeRate', 'first', 'second')
+        kosdaq_sector_df.columns=('date', 'sectorName', 'change', 'changeRate', 'first', 'second')
+
+        kosdaq_sector_df = kosdaq_sector_df.sort_values(['change','changeRate'], ascending=[False,False])
+
+        #display(kospi_sector_df.set_index('date')) 
+        #display(kosdaq_sector_df.set_index('date')) 
+
+
+        ##########  업종별시세 column중에 changeRate 'FALL' data를 일관되게 -수치로 바꾸는 code
+
+        kospi = kospi_sector_df.set_index('change')  ##  index롤 분류하기위한 indeㅌing
+        kosdaq = kosdaq_sector_df.set_index('change')  ##  index롤 분류하기위한 indeㅌing
+
+        for i in [kospi,kosdaq]:
+            cols = i.index.difference(['RISE'])      ## cols는 DateFrame이 아닌 change값이 FALL을 가리키는 객체
+            b = i.loc[cols]
+            b['changeRate']=i.loc[cols]['changeRate'].mul(-1)
+            i.loc[cols]=b        ## a change 값이 FALL인 행을 chageRate값을 -로 바꾼 b로 치환   
+
+        kospi_sector = kospi.set_index('date')
+        kosdaq_sector = kosdaq.set_index('date')
+        kospi_df =  kospi_sector.sort_values(["changeRate"],ascending=False)
+        kosdaq_df =  kosdaq_sector.sort_values(["changeRate"],ascending=False)
+        
+        kospi_df.to_excel('d:\\kospi_sector.xlsx')
+        kosdaq_df.to_excel('d:\\kosdaq_sector.xlsx')   
+        #kospi_df.to_sql(name='kospi_sector', con=engine, if_exists='append')
+        #kosdaq_df.to_sql(name='kosdaq_seotor', con=engine, if_exists='append')
+        
+
+    def kospi_kosdaq(self):
+        
+        kospi_df = pd.read_sql("select Date from kospi order by Date desc limit 1", engine)
+        kospi_df = str(kospi_df['Date'])
+        kospi_date = kospi_df[5:15]
+
+        kosdaq_df = pd.read_sql("select Date from kosdaq order by Date desc limit 1", engine)
+        kosdaq_df = str(kosdaq_df['Date'])
+        kosdaq_date = kosdaq_df[5:15]
+
+
+        start_kospi = datetime.strptime(kospi_date , "%Y-%m-%d")
+        kospi_date= (start_kospi + timedelta(days=1)).strftime('%Y%m%d')
+
+        start_kosdaq = datetime.strptime(kosdaq_date , "%Y-%m-%d")
+        kosdaq_date= (start_kosdaq + timedelta(days=1)).strftime('%Y%m%d')
+
+
+        df_kospi = get_index_ohlcv_by_date(kospi_date, "20250228", "코스피")
+        df_kospi.index.names = ['Date']
+        df_kospi.columns  = ('Open','High','Low','Close','Volume')
+        df_kospi['Market']='kospi'
+        #df_kospi.to_sql(name='kospi', con=engine, if_exists='append')
+        df_kospi.to_excel('d:\\kospi.xlsx')
+
+        df_kosdaq = get_index_ohlcv_by_date(kosdaq_date, "20250228", "코스닥")
+        df_kosdaq.index.names = ['Date']
+        df_kosdaq.columns  = ('Open','High','Low','Close','Volume')
+        df_kosdaq['Market']='kosdaq'
+        #df_kosdaq.to_sql(name='kosdaq', con=engine, if_exists='append')
+        df_kosdaq.to_excel('d:\\kosdaq.xlsx')
+   
+            
 if __name__ == "__main__":
     print("This is Module")
     
