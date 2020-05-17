@@ -317,20 +317,12 @@ class analysis:
 
         start = datetime.strptime(until_date , "%Y-%m-%d")
         until_date= (start + timedelta(days=0)).strftime('%m%d')  ##  'yy-mm-dd' 
-        os.mkdir(source_dir+'\\2020\\2020-04\\'+until_date)
+        os.mkdir(source_dir+'\\2020\\2020-05\\'+until_date)
         
-        
-programtrend_df = pd.read_sql("select Date from programtrend order by Date desc limit 1", engine)
-programtrend_df = str(programtrend_df['Date'])
-until_date = programtrend_df[5:15]
-
-start = datetime.strptime(until_date , "%Y-%m-%d")
-until_date= (start + timedelta(days=0)).strftime('%m%d')  ##  'yy-mm-dd' 
-os.mkdir(source_dir+'\\2020\\2020-04\\'+until_date)
         
 
-for filename in glob.glob(os.path.join(source_dir , '*.*')):
-    shutil.copy(filename, source_dir+'\\2020\\2020-04\\'+until_date)
+        for filename in glob.glob(os.path.join(source_dir , '*.*')):
+            shutil.copy(filename, source_dir+'\\2020\\2020-05\\'+until_date)
             
             
 class to_report:
@@ -343,7 +335,7 @@ class to_report:
             today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ") or real_today
         
         else:
-            kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 2", engine)
+            kpi200_df = pd.read_sql("select Date from market where Name='hrs' order by Date desc limit 2", engine)
             yesterday = str(kpi200_df['Date'][1])
             today = str(kpi200_df['Date'][0])
             
@@ -529,7 +521,7 @@ class to_report:
             df = select_market('kosdaq','2015-01-01')
             market_ma(df,'ma60','ma120')
             
-            kpi200_df = pd.read_sql("select Date from kpi200 order by Date desc limit 2", engine)
+            kpi200_df = pd.read_sql("select Date from market where Name='hrs' order by Date desc limit 2", engine)
             yesterday = str(kpi200_df['Date'][1])
             today = str(kpi200_df['Date'][0])
             
