@@ -53,6 +53,41 @@ path_total_b = 'd:\\stockdata\\close_ma120\\total_b_'
 path_total_c = 'd:\\stockdata\\close_ma120\\total_c_'
 source_dir = 'd:\\stockdata\\close_ma120'
 
+def bokeh_market_chart(start_day='20190101', last_day='20200528',market='코스피', freq='m' ):
+    from math import pi
+    from bokeh.io import output_notebook, show
+    from bokeh.plotting import figure
+    from bokeh.layouts import gridplot
+
+    
+    output_notebook()
+
+    df = get_index_ohlcv_by_date(start_day, last_day, market,freq)
+    df = df.reset_index()
+    df.columns=['date', 'open', 'high', 'low','close','volume']
+    df["date"] = pd.to_datetime(df["date"])
+    df = df.set_index(df['date'])
+
+    inc = df.close >= df.open
+    dec = df.open > df.close
+
+    TOOLS = "pan,wheel_zoom,box_zoom,reset,save,crosshair"
+
+    p_candlechart = figure(x_axis_type="datetime", tools=TOOLS, plot_width=900, plot_height=200, toolbar_location="left",title = market)
+    p_candlechart.xaxis.major_label_orientation = pi/4
+    p_candlechart.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="red")
+    p_candlechart.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="blue")
+    p_candlechart.vbar(df.index[inc], 0.5, df.open[inc], df.close[inc], fill_color="red", line_color="red",line_width=30)
+    p_candlechart.vbar(df.index[dec], 0.5, df.open[dec], df.close[dec], fill_color="blue", line_color="blue",line_width=30)
+
+    p_volumechart = figure(x_axis_type="datetime", tools=TOOLS, plot_width=900, plot_height=200, toolbar_location="left")
+    p_volumechart.vbar(df.index, 0.5, df.volume, fill_color="black", line_color="black",line_width=30)
+
+    p = figure(tools='crosshair', plot_width=900, toolbar_location="left")
+    p = gridplot([[p_candlechart], [p_volumechart]], toolbar_location='left')
+    show(p)
+
+
 def from_excel_analysis(path,today,start):
     df = pd.read_excel(path+today+'.xlsx')
     df = df['name']
@@ -317,12 +352,12 @@ class analysis:
 
         start = datetime.strptime(until_date , "%Y-%m-%d")
         until_date= (start + timedelta(days=0)).strftime('%m%d')  ##  'yy-mm-dd' 
-        os.mkdir(source_dir+'\\2020\\2020-05\\'+until_date)
+        os.mkdir(source_dir+'\\2020\\2020-06\\'+until_date)
         
         
 
         for filename in glob.glob(os.path.join(source_dir , '*.*')):
-            shutil.copy(filename, source_dir+'\\2020\\2020-05\\'+until_date)
+            shutil.copy(filename, source_dir+'\\2020\\2020-06\\'+until_date)
             
             
 class to_report:
@@ -516,10 +551,12 @@ class to_report:
                 
         else :
             
-            df = select_market('kospi','2015-01-01')
-            market_ma(df,'ma60','ma120')
-            df = select_market('kosdaq','2015-01-01')
-            market_ma(df,'ma60','ma120')
+            bokeh_market_chart(market='코스피')
+            df = select_market('kospi','2020-01-01')
+            market_ma(df,'ma5','ma20')
+            bokeh_market_chart(market='코스닥')
+            df = select_market('kosdaq','2020-01-01')
+            market_ma(df,'ma5','ma20')
             
             kpi200_df = pd.read_sql("select Date from market where Name='hrs' order by Date desc limit 2", engine)
             yesterday = str(kpi200_df['Date'][1])
@@ -567,7 +604,7 @@ class to_report:
                         plt.legend(loc=0)
                         plt.grid(True,color='0.7',linestyle=':',linewidth=1)  
 
-                    for i in name_all:
+                    for i in name:
                         var = select_query +"'"+i+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
                         df = pd.read_sql(var, engine)
                         df[['Volume','Close']] = df[['Volume','Close']].astype(float) #  TA-Lib로 평균을 구하려면 실수로 만들어야 함
