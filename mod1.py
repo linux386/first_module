@@ -37,12 +37,14 @@ today = datetime.now()
 real_yesterday = (today-timedelta(1)).strftime('%Y-%m-%d')
 real_today = today.strftime('%Y-%m-%d')
 date_list = ['2008-01-01','2013-01-01','2018-01-01','2019-01-01']
+three_period=['day','week','month']
 
 now = dt.datetime.today().strftime('%Y-%m-%d')
 engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stock?charset=utf8',encoding='utf-8')
 conn = pymysql.connect(host = 'localhost', user = 'kkang', password = 'leaf2027' ,db = 'stock')
 curs = conn.cursor()
 
+path_depress = 'd:\\stockdata\\depress\\depress_'
 path_price = 'd:\\stockdata\\vote_stock\\detect_stock_with_price_'
 path_volume = 'd:\\stockdata\\vote_stock\\detect_stock_with_volume_'
 path = 'd:\\stockdata\\close_ma120\\close_ma120_'
@@ -53,35 +55,122 @@ path_total_b = 'd:\\stockdata\\close_ma120\\total_b_'
 path_total_c = 'd:\\stockdata\\close_ma120\\total_c_'
 source_dir = 'd:\\stockdata\\close_ma120'
 
-def bokeh_market_chart(start_day='20190101', last_day='20200528',market='코스피', freq='m' ):
+def day_week_month_data(market='kospi', start_day = '2020-01-01',period ='month'):
+    if market=='kospi' or market=='kosdaq':
+        df = select_market(market,start_day)
+    else :
+        df = select_stock(market,start_day)
+        
+    df['Date']=pd.to_datetime(df['Date'])
+    months = [g for n, g in df.groupby(pd.Grouper(key='Date',freq='M'))]  ##   월별
+    weeks = [g for n, g in df.groupby(pd.Grouper(key='Date',freq='W'))]  ##   주별
+    columns = ['Date','Open', 'High', 'Low', 'Close', 'Volume']
+    rows = []    
+
+    if period == 'day':
+        df=df[['Date','Open', 'High', 'Low','Close', 'Volume']]
+        df.columns=columns
+        #df = df.set_index(df['date'])
+        return df    
+    if period == 'month':
+        period = months
+    elif period == 'week':
+        period = weeks
+        
+    for i in range(len(period)):
+        rows.append(period[i].iloc[-1]['Date'])
+        rows.append(period[i].iloc[0]["Open"])
+        rows.append(max(period[i]['High']))
+        rows.append(min(period[i]['Low']))
+        rows.append(period[i].iloc[-1]['Close'])
+        rows.append(sum(period[i]['Volume']))
+        
+    arr = np.array(rows)
+    arr1 = arr.reshape(len(period),6)
+    df = pd.DataFrame(data=arr1, columns=columns)
+    df = df.set_index(df['Date'])
+    df.rename(columns = {'Date' : 'Date1'}, inplace = True)  ##  Bokeh_Chart에서 Date index를사용하기위해 Colume명 Date를 Date1으로변경
+    return df 
+
+def depress(period):
+    today = datetime.now().strftime('%Y-%m-%d')
+    path_depress = 'd:\\stockdata\\depress\\depress_'
+    if period=='month':
+        start_day='2019-01-01'
+        
+    elif period=='week' :
+        start_day='2020-01-01'
+        
+    else :
+        start_day='2020-06-01'
+        
+    df = all_stock('2020-06-12')
+    df = df['Name']
+    name = df.to_list()
+
+    #name=['일야','hrs','디지털대성']
+    count = 0
+    depress=[]
+    for i in name:
+        df = day_week_month_data(market=i,start_day=start_day,period=period)
+        df['yesterday']=df.Close.shift(1)
+        df['minus']=(df['Close']-df['yesterday']) < 0
+        df1 = df.sort_values(by=['Date'], axis=0, ascending=False,ignore_index=True )
+        minus = df1.minus.values
+
+        for i in minus:
+            if i == True:
+                count += 1
+
+            else:
+                break
+
+        #print(count)
+        depress.append(count)
+        count=0
+
+
+    df2= pd.DataFrame()
+    df2['name']=name
+    df2['count']=depress
+    df3 = df2.sort_values(by=['count'], axis=0, ascending=False,ignore_index=True )
+    if period=='month':
+        df3 = df3.iloc[:100]
+    elif period=='week':
+        df3 = df3.iloc[:200]
+    elif period=='day':
+        df3 = df3.iloc[:300]
+    else:
+        pass
+    df3.to_excel(path_depress+today+'_'+period+'.xlsx')
+    
+def bokeh_chart(market='kospi',start_day = '2019-01-01', period ='month'):
     from math import pi
     from bokeh.io import output_notebook, show
     from bokeh.plotting import figure
     from bokeh.layouts import gridplot
 
-    
     output_notebook()
+    
+    df = day_week_month_data(market, start_day, period)
+    
+    mids = (df.Open + df.Close)/2
+    spans = abs(df.Close-df.Open)
 
-    df = get_index_ohlcv_by_date(start_day, last_day, market,freq)
-    df = df.reset_index()
-    df.columns=['date', 'open', 'high', 'low','close','volume']
-    df["date"] = pd.to_datetime(df["date"])
-    df = df.set_index(df['date'])
-
-    inc = df.close >= df.open
-    dec = df.open > df.close
+    inc = df.Close >= df.Open
+    dec = df.Open > df.Close
 
     TOOLS = "pan,wheel_zoom,box_zoom,reset,save,crosshair"
 
     p_candlechart = figure(x_axis_type="datetime", tools=TOOLS, plot_width=900, plot_height=200, toolbar_location="left",title = market)
     p_candlechart.xaxis.major_label_orientation = pi/4
-    p_candlechart.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="red")
-    p_candlechart.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="blue")
-    p_candlechart.vbar(df.index[inc], 0.5, df.open[inc], df.close[inc], fill_color="red", line_color="red",line_width=30)
-    p_candlechart.vbar(df.index[dec], 0.5, df.open[dec], df.close[dec], fill_color="blue", line_color="blue",line_width=30)
+    p_candlechart.segment(df.index[inc], df.High[inc], df.index[inc], df.Low[inc], color="red")
+    p_candlechart.segment(df.index[dec], df.High[dec], df.index[dec], df.Low[dec], color="blue")
+    p_candlechart.vbar(df.index[inc], 0.5, df.Open[inc], df.Close[inc], fill_color="red", line_color="red",line_width=10)
+    p_candlechart.vbar(df.index[dec], 0.5, df.Open[dec], df.Close[dec], fill_color="blue", line_color="blue",line_width=10)
 
     p_volumechart = figure(x_axis_type="datetime", tools=TOOLS, plot_width=900, plot_height=200, toolbar_location="left")
-    p_volumechart.vbar(df.index, 0.5, df.volume, fill_color="black", line_color="black",line_width=30)
+    p_volumechart.vbar(df.index, 0.5, df.Volume, fill_color="black", line_color="black",line_width=10)
 
     p = figure(tools='crosshair', plot_width=900, toolbar_location="left")
     p = gridplot([[p_candlechart], [p_volumechart]], toolbar_location='left')
@@ -551,12 +640,17 @@ class to_report:
                 
         else :
             
-            bokeh_market_chart(market='코스피')
-            df = select_market('kospi','2020-01-01')
-            market_ma(df,'ma5','ma20')
-            bokeh_market_chart(market='코스닥')
-            df = select_market('kosdaq','2020-01-01')
-            market_ma(df,'ma5','ma20')
+            bokeh_chart('kospi','2019-01-01','month')
+            bokeh_chart('kospi','2020-01-01','week')
+            df1 = select_market('kospi','2020-01-01')
+            market_ma(df1,'ma5','ma20')
+            bokeh_chart('kosdaq','2019-01-01','month')
+            bokeh_chart('kosdaq','2020-01-01','week')
+            df1 = select_market('kosdaq','2020-01-01')
+            market_ma(df1,'ma5','ma20')
+            
+            for i in three_period:
+                depress(i)
             
             kpi200_df = pd.read_sql("select Date from market where Name='hrs' order by Date desc limit 2", engine)
             yesterday = str(kpi200_df['Date'][1])
