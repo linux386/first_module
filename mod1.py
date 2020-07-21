@@ -804,8 +804,8 @@ class to_report:
                          
                         
 class to_sql:
-    excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','money_trend.xlsx','program_trend.xlsx','kospi_sector.xlsx','kosdaq_sector.xlsx','kospi.xlsx','kosdaq.xlsx','market.xlsx']
-    sql_table_name_list=['kpi200','investortrend','moneytrend','programtrend','kospi_sector','kosdaq_sector','kospi','kosdaq','market']
+    excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','money_trend.xlsx','program_trend.xlsx','kospi_sector.xlsx','kosdaq_sector.xlsx','market.xlsx','kospi.xlsx','kosdaq.xlsx']
+    sql_table_name_list=['kpi200','investortrend','moneytrend','programtrend','kospi_sector','kosdaq_sector','market','kospi','kosdaq']
     
     
     #excel_name_list=['kpi200.xlsx', 'investor_trend.xlsx','money_trend.xlsx','program_trend.xlsx','market.xlsx']
