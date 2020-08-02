@@ -8,6 +8,7 @@ import json
 import os,glob,shutil,io,sys
 from pykrx.stock.api import *
 from fake_useragent import UserAgent
+ua = UserAgent(verify_ssl=False)
 import FinanceDataReader as fdr
 import pandas as pd
 import numpy as np
@@ -44,16 +45,16 @@ engine = sqlalchemy.create_engine('mysql+pymysql://kkang:leaf2027@localhost/stoc
 conn = pymysql.connect(host = 'localhost', user = 'kkang', password = 'leaf2027' ,db = 'stock')
 curs = conn.cursor()
 
-path_depress = 'd:\\stockdata\\depress\\depress_'
-path_price = 'd:\\stockdata\\vote_stock\\detect_stock_with_price_'
-path_volume = 'd:\\stockdata\\vote_stock\\detect_stock_with_volume_'
-path = 'd:\\stockdata\\close_ma120\\close_ma120_'
-path_total = 'd:\\stockdata\\close_ma120\\total_'
-path_total_f = 'd:\\stockdata\\close_ma120\\total_filter_'
-path_total_a = 'd:\\stockdata\\close_ma120\\total_a_'
-path_total_b = 'd:\\stockdata\\close_ma120\\total_b_'
-path_total_c = 'd:\\stockdata\\close_ma120\\total_c_'
-source_dir = 'd:\\stockdata\\close_ma120'
+path_depress = 'f:\\stockdata\\depress\\depress_'
+path_price = 'f:\\stockdata\\vote_stock\\detect_stock_with_price_'
+path_volume = 'f:\\stockdata\\vote_stock\\detect_stock_with_volume_'
+path = 'f:\\stockdata\\close_ma120\\close_ma120_'
+path_total = 'f:\\stockdata\\close_ma120\\total_'
+path_total_f = 'f:\\stockdata\\close_ma120\\total_filter_'
+path_total_a = 'f:\\stockdata\\close_ma120\\total_a_'
+path_total_b = 'f:\\stockdata\\close_ma120\\total_b_'
+path_total_c = 'f:\\stockdata\\close_ma120\\total_c_'
+source_dir = 'f:\\stockdata\\close_ma120'
 
 def day_week_month_data(market='kospi', start_day = '2020-01-01',period ='month'):
     if market=='kospi' or market=='kosdaq':
@@ -94,7 +95,7 @@ def day_week_month_data(market='kospi', start_day = '2020-01-01',period ='month'
 
 def depress(period):
     today = datetime.now().strftime('%Y-%m-%d')
-    path_depress = 'd:\\stockdata\\depress\\depress_'
+    path_depress = 'f:\\stockdata\\depress\\depress_'
     if period=='month':
         start_day='2019-01-01'
         
@@ -195,9 +196,9 @@ def last_page(source):
     return last
 
 def select_market(name,date):
-    select_query = "select * from "
-    date_query = " where Date > "    
-    var = select_query + name + date_query+"'"+date+"'" 
+    select_query = "select * from market where Name= "
+    date_query = "Date > "    
+    var = select_query +"'"+name+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
     df = pd.read_sql(var, engine)
     return df
 
@@ -335,7 +336,7 @@ def make_dataset(name,date):
     return df1  
 
 class analysis:
-    source_dir = 'd:\\stockdata\\close_ma120'
+    source_dir = 'f:\\stockdata\\close_ma120'
     df = all_stock('2019-10-10')
     df = df['Name']
     name = df.to_list()
@@ -819,7 +820,7 @@ class to_sql:
         
             file_name = input('파일이름을 입력하세요:')
 
-            df=pd.read_excel('d:\\'+ file_name)
+            df=pd.read_excel('f:\\'+ file_name)
             if file_name=='kpi200.xlsx':
                 table_name = 'kpi200'
                 df.columns=['Date','kpi200','거래량']
@@ -845,7 +846,7 @@ class to_sql:
                 df.columns=['Date', 'sectorName', 'changeRate', 'first', 'second']                
         
             elif file_name=='market.xlsx':
-                data = pd.read_excel('d:\\market.xlsx')
+                data = pd.read_excel('f:\\market.xlsx')
                 start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
 
                 code_list = data['종목코드'].tolist()
@@ -875,7 +876,7 @@ class to_sql:
             for i in excel_name_list:
                 
                 if i == 'market.xlsx':
-                    data = pd.read_excel('d:\\market.xlsx')
+                    data = pd.read_excel('f:\\market.xlsx')
                     market_df = pd.read_sql("select Date from market order by Date desc limit 1", engine)
                     market_df = str(market_df['Date'])
                     print(market_df)
@@ -902,7 +903,7 @@ class to_sql:
                     return 
                 else :
                     table_name = sql_table_name_list[a]
-                    df=pd.read_excel('d:\\'+ i)
+                    df=pd.read_excel('f:\\'+ i)
                     print(table_name)
                     df = df.rename(columns = {'Unnamed: 0': 'Date'})
                     df.to_sql(name=table_name, con=engine, if_exists='append', index = False)
@@ -920,7 +921,7 @@ class to_sql:
         start_date = input("시작날자를 입려하세요 : sample: '2015-01-01'")
         table_name = input("table명을 입력하세요 : sample: market")
     
-        data=pd.read_excel('d:\\'+ file_name)
+        data=pd.read_excel('f:\\'+ file_name)
    
         code_list = data['종목코드'].tolist()
         code_list = [str(item).zfill(6) for item in code_list]
@@ -935,7 +936,7 @@ class to_sql:
             df['Code'],df['Name'] = code,stock_dic[code]
             df = df[['Code','Name','Open','High','Low','Volume','Close']]
             if toward == 'excel':
-                df.to_excel('d:\\data_set\\kospi\\'+ stock_dic[code] +'.xlsx',engine = 'xlsxwriter')
+                df.to_excel('f:\\data_set\\kospi\\'+ stock_dic[code] +'.xlsx',engine = 'xlsxwriter')
             elif toward == 'sql':
                 df.to_sql(name=table_name, con=engine, if_exists='append')
                 
@@ -950,9 +951,9 @@ class to_sql:
         conn.close()
 
         df = fdr.DataReader(Code, '1995')
-        df.to_excel('d:\\'+Code+'.xlsx', encoding='UTF-8')
+        df.to_excel('f:\\'+Code+'.xlsx', encoding='UTF-8')
 
-        df = pd.read_excel('d:\\'+Code+'.xlsx')
+        df = pd.read_excel('f:\\'+Code+'.xlsx')
         df['Code']= Code
         df['Name']= Name
 
@@ -980,7 +981,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\investor_trend.xlsx'
+        path = 'f:\\investor_trend.xlsx'
     
         # 날짜를 받을 리스트
         date_list = []
@@ -1052,7 +1053,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\investor_trend.xlsx'
+        path = 'f:\\investor_trend.xlsx'
         
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
@@ -1123,7 +1124,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\money_trend.xlsx'   
+        path = 'f:\\money_trend.xlsx'   
     
         # 날짜를 받을 리스트
         date_list = []
@@ -1190,7 +1191,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\money_trend.xlsx'
+        path = 'f:\\money_trend.xlsx'
 
     
         if choice == 1:
@@ -1267,7 +1268,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\kpi200.xlsx'
+        path = 'f:\\kpi200.xlsx'
     
         # 날짜를 받을 리스트
         date_list = []
@@ -1339,7 +1340,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\kpi200.xlsx'
+        path = 'f:\\kpi200.xlsx'
 
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
@@ -1410,7 +1411,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\program_trend.xlsx'
+        path = 'f:\\program_trend.xlsx'
     
         # 날짜를 받을 리스트
         date_list = []
@@ -1483,7 +1484,7 @@ class to_excel:
         print(last)
 
         # 사용자의 PC내 폴더 주소를 입력하시면 됩니다.
-        path = 'd:\\program_trend.xlsx'
+        path = 'f:\\program_trend.xlsx'
 
         if choice == 1:
             until_date = input("날짜를 입력하세요 sample: '2019-01-10': ") or real_yesterday
@@ -1545,7 +1546,7 @@ class to_excel:
                     count += 1
             
     def future(self, choice = 1):
-        path = 'd:\\future.xlsx'
+        path = 'f:\\future.xlsx'
         if choice ==1:
             # Fake Header 정보
             ua = UserAgent()
@@ -1711,8 +1712,8 @@ class to_excel:
         kospi_df =  kospi_sector.sort_values(["changeRate"],ascending=False)
         kosdaq_df =  kosdaq_sector.sort_values(["changeRate"],ascending=False)
         
-        kospi_df.to_excel('d:\\kospi_sector.xlsx')
-        kosdaq_df.to_excel('d:\\kosdaq_sector.xlsx')   
+        kospi_df.to_excel('f:\\kospi_sector.xlsx')
+        kosdaq_df.to_excel('f:\\kosdaq_sector.xlsx')   
         #kospi_df.to_sql(name='kospi_sector', con=engine, if_exists='append')
         #kosdaq_df.to_sql(name='kosdaq_seotor', con=engine, if_exists='append')
         
@@ -1740,14 +1741,14 @@ class to_excel:
         df_kospi.columns  = ('Open','High','Low','Close','Volume')
         df_kospi['Market']='kospi'
         #df_kospi.to_sql(name='kospi', con=engine, if_exists='append')
-        df_kospi.to_excel('d:\\kospi.xlsx')
+        df_kospi.to_excel('f:\\kospi.xlsx')
 
         df_kosdaq = get_index_ohlcv_by_date(kosdaq_date, "20250228", "코스닥")
         df_kosdaq.index.names = ['Date']
         df_kosdaq.columns  = ('Open','High','Low','Close','Volume')
         df_kosdaq['Market']='kosdaq'
         #df_kosdaq.to_sql(name='kosdaq', con=engine, if_exists='append')
-        df_kosdaq.to_excel('d:\\kosdaq.xlsx')
+        df_kosdaq.to_excel('f:\\kosdaq.xlsx')
    
             
 if __name__ == "__main__":
