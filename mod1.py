@@ -5,10 +5,12 @@ Spyder Editor
 This is a temporary script file.
 """
 import json
+import time
 import os,glob,shutil,io,sys
 from pykrx.stock.api import *
 from fake_useragent import UserAgent
 ua = UserAgent(verify_ssl=False)
+ua = UserAgent(use_cache_server=False)
 import FinanceDataReader as fdr
 import pandas as pd
 import numpy as np
@@ -46,7 +48,7 @@ conn = pymysql.connect(host = 'localhost', user = 'kkang', password = 'leaf2027'
 curs = conn.cursor()
 
 path_depress = 'f:\\stockdata\\depress\\depress_'
-path_price = 'f:\\stockdata\\vote_stock\\detect_stock_with_price_'
+path_price = 'f:\\stockdata\\vote_stock\\detect_stock_with_pprice_'
 path_volume = 'f:\\stockdata\\vote_stock\\detect_stock_with_volume_'
 path = 'f:\\stockdata\\close_ma120\\close_ma120_'
 path_total = 'f:\\stockdata\\close_ma120\\total_'
@@ -54,7 +56,29 @@ path_total_f = 'f:\\stockdata\\close_ma120\\total_filter_'
 path_total_a = 'f:\\stockdata\\close_ma120\\total_a_'
 path_total_b = 'f:\\stockdata\\close_ma120\\total_b_'
 path_total_c = 'f:\\stockdata\\close_ma120\\total_c_'
-source_dir = 'f:\\stockdata\\close_ma120'
+source_dir = 'f:\\stockdata\\close_ma120\\'
+
+startday_query = 'select Date from kospi order by Date desc limit 1'
+startday_df = pd.read_sql(startday_query, engine)
+startday_df = pd.to_datetime(startday_df['Date'])
+startday_df = startday_df + timedelta(1)          ##  최종날짜 다음날짜
+startday_df = str(startday_df)
+start = startday_df[4:14]                ## 2020-07-13
+startday = start.replace('-','')   ## 20200713
+
+def kospi_kosdaq(lastday='20251231', market='코스피'):
+
+    df = get_index_ohlcv_by_date(startday, lastday, market)
+
+    df.index.names = ['Date']
+    df.columns  = ['Open','High','Low','Close','Volume']
+    if market == '코스피':
+        df['Market']='kospi'
+        df.to_sql(name='kospi', con=engine, if_exists='append')
+    elif market == '코스닥':
+        df['Market']='kosdaq'
+        df.to_sql(name='kosdaq', con=engine, if_exists='append')
+    #kospi_kosdaq( market='코스피')
 
 def day_week_month_data(market='kospi', start_day = '2020-01-01',period ='month'):
     if market=='kospi' or market=='kosdaq':
@@ -143,7 +167,8 @@ def depress(period):
         df3 = df3.iloc[:300]
     else:
         pass
-    df3.to_excel(path_depress+today+'_'+period+'.xlsx')
+    df3 = df3.rename(columns={'name':'Name'})
+    df3.to_excel(path_depress+period+'_'+today+'.xlsx')
     
 def bokeh_chart(market='kospi',start_day = '2019-01-01', period ='month'):
     from math import pi
@@ -196,15 +221,15 @@ def last_page(source):
     return last
 
 def select_market(name,date):
-    select_query = "select * from market where Name= "
-    date_query = "Date > "    
-    var = select_query +"'"+name+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
+    select_query = "select * from "
+    date_query = " where Date > "    
+    var = select_query + name + date_query+"'"+date+"'" 
     df = pd.read_sql(var, engine)
     return df
 
 def select_stock(name,date):
     select_query = "select * from market_good where Name= "
-    date_query = "Date > "    
+    date_query = "Date >= "    
     var = select_query +"'"+name+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
     df = pd.read_sql(var, engine)
     return df
@@ -336,8 +361,8 @@ def make_dataset(name,date):
     return df1  
 
 class analysis:
-    source_dir = 'f:\\stockdata\\close_ma120'
-    df = all_stock('2019-10-10')
+    source_dir = 'f:/stockdata/close_ma120/'
+    df = all_stock('2020-08-03')
     df = df['Name']
     name = df.to_list()
 
@@ -378,12 +403,12 @@ class analysis:
 
         pure_df.columns = map(str.lower, pure_df.columns) ## columns 명을 소문자로 
 
-        last_df = df2.loc[df2['date'] == datelist[-1]]
-        last_close_df = last_df[last_df['close'] < 0.1]
-        last_ma_df = last_df[last_df['ma120'] < 0.1]
-        a_df = last_ma_df[last_ma_df['close'] > last_ma_df['ma60']] 
-        last_ma_df = a_df[a_df['ma60'] > a_df['ma120']]
-        last_price_df = pure_df.loc[pure_df['date'] == datelist[-1]]
+        last_df = df2.loc[df2['date'] == datelist[-1]]  ##  가장최근일자 전종목  (표준화 후)
+        last_close_df = last_df[last_df['close'] < 0.1]   ##  가장최근종가가 최저가 인경우  (표준화 후)
+        last_ma_df = last_df[last_df['ma120'] < 0.1]      ## 가장최근 120일선이 최저인 경우  (표준화 후)
+        a_df = last_ma_df[last_ma_df['close'] > last_ma_df['ma60']] ## 가장최근 종가가 60일 보타 큰경우  (표준화 후)
+        last_ma_df = a_df[a_df['ma60'] > a_df['ma120']]             ## 60일선이 120일선 위인경우  (표준화 후)
+        last_price_df = pure_df.loc[pure_df['date'] == datelist[-1]]  
     
         for i in datelist:
             first_df = df2.loc[df2['date'] == i]             ##  표준화 dataframe 
@@ -420,8 +445,10 @@ class analysis:
                 second_df.to_excel(path+strdate+'.xlsx')         ##  표준화 dataframe 
 
     def total_ab_intersection(self ):
-        
-        datelist = self.datelist
+        select_query = "select * from market where Name='hrs' and Date >= '2020-02-20' "
+        df3 = pd.read_sql(select_query, engine)
+        df3 = df3['Date']
+        datelist = df3.to_list()  
         for i in datelist:
             strdate = i.strftime('%Y-%m-%d')
             df_a = pd.read_excel(path_total_a+strdate+'.xlsx')
@@ -434,21 +461,22 @@ class analysis:
             total_df = df_ab[['name_x', 'code', 'close_x', 'close_y', 'ma60_x', 'ma60_y', 'ma120_x', 'ma120_y', 'price_x', 'price_y', 'date_x','volume_z', 'price_diff']]
             filter_total_df = filter_df_ab[['name_x', 'code', 'close_x', 'close_y', 'ma60_x', 'ma60_y', 'ma120_x', 'ma120_y', 'price_x', 'price_y', 'date_x','volume_z', 'price_diff']]
             total_df.to_excel(path_total+strdate+'.xlsx')  ## total_b (from 2008) and total_a(from 2019) 교집합
+            filter_total_df = filter_total_df.rename(columns={'name_x':'Name','price_x':'Closed'})
             filter_total_df.to_excel(path_total_f+strdate+'.xlsx') ## total_b (from 2008) and total_a['close_y'] < 0.2 교집합
-            
+
+
+    def move(self ):
+        
+        
         programtrend_df = pd.read_sql("select Date from programtrend order by Date desc limit 1", engine)
         programtrend_df = str(programtrend_df['Date'])
-        until_date = programtrend_df[5:15]
-
-        start = datetime.strptime(until_date , "%Y-%m-%d")
-        until_date= (start + timedelta(days=0)).strftime('%m%d')  ##  'yy-mm-dd' 
-        os.mkdir(source_dir+'\\2020\\2020-06\\'+until_date)
-        
-        
-
+        until_date = programtrend_df[10:15]
+        until_date = until_date.replace('-','')
+        print(source_dir)
+        os.mkdir(source_dir+'2020/'+'2020_09/'+until_date)
         for filename in glob.glob(os.path.join(source_dir , '*.*')):
-            shutil.copy(filename, source_dir+'\\2020\\2020-06\\'+until_date)
-            
+            shutil.move(filename, source_dir+'2020/'+'2020_09/'+until_date+'/')
+
             
 class to_report:
     select_query = "select * from market_good where Date >="
@@ -490,6 +518,8 @@ class to_report:
         df3 = df3[:50]
         df4 = df4.reset_index(drop=True)
         df4 = df4[:50]
+        df3 = df3.rename(columns={'today_Close':'Closed'})
+        df4 = df4.rename(columns={'today_Close':'Closed'})
         df3.to_excel(path_volume+today+'.xlsx', encoding='utf-8')
         df4.to_excel(path_price+today+'.xlsx', encoding='utf-8')        
         display(df3)
@@ -687,17 +717,25 @@ class to_report:
 
                     plt.figure(figsize=(16,4))
                     for i in range(len(name)):
-                        plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100,label=name[i])
-                        plt.legend(loc=0)
-                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                        try:
+                            plt.plot(df1[name[i]]/df1[name[i]].loc[df['Date'][0]]*100,label=name[i])
+                            plt.legend(loc=0)
+                            plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                            
+                        except:
+                            pass
 
                     plt.figure(figsize=(16,4))
                     for i in range(len(name)):
-                        volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
-                        plt.plot(df1[name[i]+'거래량']/volume_average, label=name[i])
-                        #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
-                        plt.legend(loc=0)
-                        plt.grid(True,color='0.7',linestyle=':',linewidth=1)  
+                        try:
+                            volume_average = df1[name[i]+'거래량'].sum(axis=0)/size
+                            plt.plot(df1[name[i]+'거래량']/volume_average, label=name[i])
+                            #plt.plot(df1[name[i]+'거래량']/df1[name[i]+'거래량'].loc[df['Date'][0]]*100, label =[name[i]+'거래량'] )
+                            plt.legend(loc=0)
+                            plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+                            
+                        except:
+                            pass                        
 
                     for i in name:
                         var = select_query +"'"+i+"'"+" "+"&&"+" "+date_query+"'"+date+"'" 
