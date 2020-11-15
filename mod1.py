@@ -50,6 +50,9 @@ curs = conn.cursor()
 path_depress = 'f:\\stockdata\\depress\\depress_'
 path_price = 'f:\\stockdata\\vote_stock\\detect_stock_with_pprice_'
 path_volume = 'f:\\stockdata\\vote_stock\\detect_stock_with_volume_'
+path_depress_d = 'f:\\stockdata\\depress\\depress_day_'
+path_depress_w = 'f:\\stockdata\\depress\\depress_week_'
+path_depress_m = 'f:\\stockdata\\depress\\depress_month_'
 path = 'f:\\stockdata\\close_ma120\\close_ma120_'
 path_total = 'f:\\stockdata\\close_ma120\\total_'
 path_total_f = 'f:\\stockdata\\close_ma120\\total_filter_'
@@ -58,28 +61,131 @@ path_total_b = 'f:\\stockdata\\close_ma120\\total_b_'
 path_total_c = 'f:\\stockdata\\close_ma120\\total_c_'
 source_dir = 'f:\\stockdata\\close_ma120\\'
 
-startday_query = 'select Date from kospi order by Date desc limit 1'
-startday_df = pd.read_sql(startday_query, engine)
-startday_df = pd.to_datetime(startday_df['Date'])
-startday_df = startday_df + timedelta(1)          ##  최종날짜 다음날짜
-startday_df = str(startday_df)
-start = startday_df[4:14]                ## 2020-07-13
-startday = start.replace('-','')   ## 20200713
+kospi_startday_query = 'select Date from kospi order by Date desc limit 1'
+kosdaq_startday_query = 'select Date from kosdaq order by Date desc limit 1'
+kospi_startday_df = pd.read_sql(kospi_startday_query, engine)
+kosdaq_startday_df = pd.read_sql(kosdaq_startday_query, engine)
+kospi_startday_df = pd.to_datetime(kospi_startday_df['Date'])
+kosdaq_startday_df = pd.to_datetime(kosdaq_startday_df['Date'])
+kospi_startday_df = kospi_startday_df + timedelta(1)          ##  최종날짜 다음날짜
+kosdaq_startday_df = kosdaq_startday_df + timedelta(1)          ##  최종날짜 다음날짜
+kospi_startday_df = str(kospi_startday_df)
+kosdaq_startday_df = str(kosdaq_startday_df)
+kospi_start = kospi_startday_df[4:14]                ## 2020-07-13
+kosdaq_start = kosdaq_startday_df[4:14]
+kospi_startday = kospi_start.replace('-','')   ## 20200713
+kosdaq_startday = kosdaq_start.replace('-','')   ## 20200713
 
-def kospi_kosdaq(lastday='20251231', market='코스피'):
+def option(path=path_volume, day=real_today, graph_start_date='2020-01-01',start_count=0):
+    end_count=start_count+5
+    name = pd.read_excel(path+day+'.xlsx')
+    name = name[start_count:end_count]
+    name = name['Name']
+    name = name.to_list()
+    return name,graph_start_date
 
-    df = get_index_ohlcv_by_date(startday, lastday, market)
 
-    df.index.names = ['Date']
-    df.columns  = ['Open','High','Low','Close','Volume']
-    if market == '코스피':
+def compare_graph(method):
+    name, graph_start_date = method
+    #name = ['hrs','오공','모트렉스']
+    #name = input('주식이름을 입력하세요:').split()
+    #date = input("날짜를 입력하세요 sample: '2019-01-10': ")
+
+    select_query = "select Date,Close,Volume from market where Name= "
+    date_query =  "Date >"
+
+    #tuple_name=tuple(name)
+    df_Close = pd.DataFrame()
+    df_Volume = pd.DataFrame()
+    dfc = pd.DataFrame()
+    dfv = pd.DataFrame()
+
+    for x in name:
+        var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+graph_start_date+"'"
+        df = pd.read_sql(var ,engine)
+        df_Close = df[['Date', 'Close']]
+        df_Close.columns=['Date',x]
+        df_Close = df_Close.set_index('Date')
+        dfc = pd.concat([dfc,df_Close], axis=1)
+        df_Volume = df[['Date', 'Volume']]
+        df_Volume.columns=['Date',x]
+        df_Volume = df_Volume.set_index('Date')
+        dfv = pd.concat([dfv,df_Volume], axis=1)
+
+    plt.figure(figsize=(16,5))
+    
+    for i in range(len(name)):
+        plt.plot(dfc[name[i]]/dfc[name[i]].loc[df['Date'][0]]*100)
+        #plt.plot(dfv[name[i]]/dfv[name[i]].loc[df['Date'][0]]*100)        
+    plt.legend(name,loc=0)
+    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+    
+    plt.figure(figsize=(16,5))
+    
+    for i in range(len(name)):
+        #plt.plot(dfc[name[i]]/dfc[name[i]].loc[df['Date'][0]]*100)
+        plt.plot(dfv[name[i]]/dfv[name[i]].loc[df['Date'][0]]*100)        
+    plt.legend(name,loc=0)
+    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+
+
+def kospi_kosdaq(lastday='20251231', market='1001'):
+    if market == '1001':
+        df = get_index_ohlcv_by_date(kospi_startday, lastday, market)
+        df.index.names = ['Date']
+        df.columns  = ['Open','High','Low','Close','Volume']
         df['Market']='kospi'
         df.to_sql(name='kospi', con=engine, if_exists='append')
-    elif market == '코스닥':
+    elif market == '2001':
+        df = get_index_ohlcv_by_date(kospi_startday, lastday, market)
+        df.index.names = ['Date']
+        df.columns  = ['Open','High','Low','Close','Volume']        
         df['Market']='kosdaq'
         df.to_sql(name='kosdaq', con=engine, if_exists='append')
     #kospi_kosdaq( market='코스피')
 
+def compare_graph_with_name(name):
+    select_query = "select Date,Close,Volume from market where Name= "
+    date_query =  "Date >"
+    df_Close = pd.DataFrame()
+    df_Volume = pd.DataFrame()
+    dfc = pd.DataFrame()
+    dfv = pd.DataFrame()
+    #name=['엘아이에스']
+    date = '2020-01-01'
+
+    for x in name:
+        var = select_query +"'"+x+"'"+" "+"&&"+" "+date_query+"'"+date+"'"
+        df = pd.read_sql(var ,engine)
+        df_Close = df[['Date', 'Close']]
+        df_Close.columns=['Date',x]
+        df_Close = df_Close.set_index('Date')
+        dfc = pd.concat([dfc,df_Close], axis=1)
+        df_Volume = df[['Date', 'Volume']]
+        df_Volume.columns=['Date',x]
+        df_Volume = df_Volume.set_index('Date')
+        dfv = pd.concat([dfv,df_Volume], axis=1)
+
+        """if df_Close.empty:
+            df_Close = df
+        else:
+            df_Close = pd.merge (df,df1,on='Date')"""
+
+    plt.figure(figsize=(16,5))
+
+    for i in range(len(name)):
+        plt.plot(dfc[name[i]]/dfc[name[i]].loc[df['Date'][0]]*100)
+        #plt.plot(dfv[name[i]]/dfv[name[i]].loc[df['Date'][0]]*100)        
+    plt.legend(name,loc=0)
+    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+    plt.figure(figsize=(16,5))
+    for i in range(len(name)):
+        #plt.plot(dfc[name[i]]/dfc[name[i]].loc[df['Date'][0]]*100)
+        plt.plot(dfv[name[i]]/dfv[name[i]].loc[df['Date'][0]]*100)        
+    plt.legend(name,loc=0)
+    plt.grid(True,color='0.7',linestyle=':',linewidth=1)
+    
+    
 def day_week_month_data(market='kospi', start_day = '2020-01-01',period ='month'):
     if market=='kospi' or market=='kosdaq':
         df = select_market(market,start_day)
@@ -473,10 +579,10 @@ class analysis:
         until_date = programtrend_df[10:15]
         until_date = until_date.replace('-','')
         print(source_dir)
-        os.mkdir(source_dir+'2020/'+'2020_09/'+until_date)
+        os.mkdir(source_dir+'2020/'+'2020_11/'+until_date)
         for filename in glob.glob(os.path.join(source_dir , '*.*')):
-            shutil.move(filename, source_dir+'2020/'+'2020_09/'+until_date+'/')
-
+            shutil.copy(filename, source_dir+'2020/'+'2020_11/'+until_date+'/')
+            #shutil.move(filename, source_dir+'2020/'+'2020_11/'+until_date+'/')
             
 class to_report:
     select_query = "select * from market_good where Date >="
@@ -689,7 +795,8 @@ class to_report:
             
             for i in graph_name_list:
                 if i == 'stock' :
-                    name = pd.read_excel(path_volume+today+'.xlsx', encoding='utf-8')
+                    #name = pd.read_excel(path_volume+today+'.xlsx', encoding='utf-8')
+                    name = pd.read_excel(path_volume+today+'.xlsx')                    
                     name_all = name['Name']
                     name_all = name_all.to_list()
                     name = name[:5]
