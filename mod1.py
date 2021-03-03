@@ -8,6 +8,8 @@ import json
 import time
 import plaidml.keras
 plaidml.keras.install_backend()
+import plotly.offline as offline
+import plotly.graph_objs as go
 import os,glob,shutil,io,sys
 from pykrx.stock.api import *
 from fake_useragent import UserAgent
@@ -20,13 +22,18 @@ from bs4 import BeautifulSoup
 import datetime as dt
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout,LSTM
-#from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime,timedelta
 from urllib.request import urlopen
 import urllib.request as req
 import sqlalchemy 
 import pymysql
+from matplotlib import font_manager, rc
+from matplotlib import pyplot as plt
+plt.rcParams.update({'figure.max_open_warning': 0})
+font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
+rc('font', family=font_name)
+import mplfinance as mpf
 import talib.abstract as ta
 from talib import RSI, BBANDS
 import warnings
@@ -36,11 +43,6 @@ warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
 import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
-from matplotlib import font_manager, rc
-plt.rcParams.update({'figure.max_open_warning': 0})
-font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
-rc('font', family=font_name)
-os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
 today = datetime.now()
 real_yesterday = (today-timedelta(1)).strftime('%Y-%m-%d')
@@ -53,17 +55,18 @@ engine = sqlalchemy.create_engine('mysql+pymysql://root:leaf2027@localhost/stock
 conn = pymysql.connect(host = 'localhost', user = 'kkang', password = 'leaf2027' ,db = 'stock')
 curs = conn.cursor()
 
+path_down = 'd:/stockdata/period_down/'
 path_depress = 'd:/stockdata/depress/depress_'
-path_price = 'd:/stockdata/vote_stock/detect_stock_with_pprice_'
-path_volume = 'd:/stockdata/vote_stock/detect_stock_with_volume_'
 path_depress_d = 'd:/stockdata/depress/depress_day_'
 path_depress_w = 'd:/stockdata/depress/depress_week_'
 path_depress_m = 'd:/stockdata/depress/depress_month_'
-path = 'd:/stockdata/close_ma120/close_ma120_'
+path_vote_stock = 'd:/stockdata/vote_stock/'
+path_price = 'd:/stockdata/vote_stock/detect_stock_with_pprice_'
+path_volume = 'd:/stockdata/vote_stock/detect_stock_with_volume_'
+path_close_ma120 = 'd:/stockdata/close_ma120/'
 path_close_ma_f = 'd:/stockdata/close_ma120/total_filter_'
 path_ma = 'd:/stockdata/close_ma120/total_ma_'
 path_close = 'd:/stockdata/close_ma120/total_close_'
-source_dir = 'd:/stockdata/close_ma120/'
 
 kospi_startday_query = 'select Date from kospi order by Date desc limit 1'
 kosdaq_startday_query = 'select Date from kosdaq order by Date desc limit 1'
@@ -87,7 +90,6 @@ def option(path=path_volume, day=real_today, graph_start_date='2020-01-01',start
     name = name['Name']
     name = name.to_list()
     return name,graph_start_date
-
 
 def compare_graph(method):
     name, graph_start_date = method
@@ -172,11 +174,6 @@ def compare_graph_with_name(name):
         df_Volume = df_Volume.set_index('Date')
         dfv = pd.concat([dfv,df_Volume], axis=1)
 
-        """if df_Close.empty:
-            df_Close = df
-        else:
-            df_Close = pd.merge (df,df1,on='Date')"""
-
     plt.figure(figsize=(16,5))
 
     for i in range(len(name)):
@@ -192,11 +189,11 @@ def compare_graph_with_name(name):
     plt.grid(True,color='0.7',linestyle=':',linewidth=1)
     
     
-def day_week_month_data(market='kospi', start_day = '2020-01-01',period ='month'):
+def day_week_month_data(market='kospi', from_day = '2020-01-01',period ='month'):
     if market=='kospi' or market=='kosdaq':
-        df = select_market_period(market,start_day)
+        df = select_market_period(market,from_day)
     else :
-        df = select_stock_period(market,start_day)
+        df = select_stock_period(market,from_day)
         
     df['Date']=pd.to_datetime(df['Date'])
     months = [g for n, g in df.groupby(pd.Grouper(key='Date',freq='M'))]  ##   월별
@@ -205,41 +202,54 @@ def day_week_month_data(market='kospi', start_day = '2020-01-01',period ='month'
     rows = []    
 
     if period == 'day':
+        nick = 'day'
         df=df[['Date','Open', 'High', 'Low','Close', 'Volume']]
         df.columns=columns
         #df = df.set_index(df['date'])
-        return df    
+        #return df    
     if period == 'month':
+        nick='month'
         period = months
     elif period == 'week':
+        nick='week'
         period = weeks
         
     for i in range(len(period)):
-        rows.append(period[i].iloc[-1]['Date'])
-        rows.append(period[i].iloc[0]["Open"])
-        rows.append(max(period[i]['High']))
-        rows.append(min(period[i]['Low']))
-        rows.append(period[i].iloc[-1]['Close'])
-        rows.append(sum(period[i]['Volume']))
-        
+        try:
+            rows.append(period[i].iloc[-1]['Date'])
+            rows.append(period[i].iloc[0]["Open"])
+            rows.append(max(period[i]['High']))
+            rows.append(min(period[i]['Low']))
+            rows.append(period[i].iloc[-1]['Close'])
+            rows.append(sum(period[i]['Volume']))
+        except:
+            pass
+    
+    #print('count:', len(period))
     arr = np.array(rows)
-    arr1 = arr.reshape(len(period),6)
+    if nick == 'day':
+        return df
+    
+    if nick == 'week' and len(period) > 177:
+        arr1 = arr.reshape(len(period)-1,6)
+    else:
+        arr1 = arr.reshape(len(period),6)
+        
     df = pd.DataFrame(data=arr1, columns=columns)
-    df = df.set_index(df['Date'])
-    df.rename(columns = {'Date' : 'Date1'}, inplace = True)  ##  Bokeh_Chart에서 Date index를사용하기위해 Colume명 Date를 Date1으로변경
-    return df 
+    
+    return df
 
 def depress(period):
     today = datetime.now().strftime('%Y-%m-%d')
     path_depress = 'd:/stockdata/depress/depress_'
     if period=='month':
-        start_day='2019-01-01'
+        from_day='2019-01-01'
         
     elif period=='week' :
-        start_day='2020-01-01'
+        from_day='2020-01-01'
         
     else :
-        start_day='2020-06-01'
+        from_day='2020-06-01'
         
     df = all_stock_at('2020-06-12')
     df = df['Name']
@@ -249,7 +259,7 @@ def depress(period):
     count = 0
     depress=[]
     for i in name:
-        df = day_week_month_data(market=i,start_day=start_day,period=period)
+        df = day_week_month_data(market=i,from_day=from_day,period=period)
 
         df['yesterday']=df.Close.shift(1)
         df['minus']=(df['Close']-df['yesterday']) < 0
@@ -283,7 +293,21 @@ def depress(period):
     df3 = df3.rename(columns={'name':'Name'})
     df3.to_excel(path_depress+period+'_'+today+'.xlsx')
     
-def bokeh_chart(market='kospi',start_day = '2019-01-01', period ='month'):
+def candle_graph( market='kospi', from_day = '2020-01-01',period ='week' ):
+    df = day_week_month_data(market, from_day ,period )
+
+    df = df[['Date','Open','High','Low','Close']]
+    
+    offline.init_notebook_mode(connected = True)
+
+    trace = go.Candlestick(x=df.Date, open=df.Open, high=df.High, low=df.Low, close = df.Close,increasing_line_color= 'red', decreasing_line_color= 'blue')
+    data =[trace]
+
+    layout=go.Layout(title=market)
+    fig = go.Figure(data=data, layout=layout)
+    offline.iplot(fig,filename='candlestick')
+    
+def bokeh_chart(market='kospi',from_day = '2019-01-01', period ='month'):
     from math import pi
     from bokeh.io import output_notebook, show
     from bokeh.plotting import figure
@@ -291,8 +315,9 @@ def bokeh_chart(market='kospi',start_day = '2019-01-01', period ='month'):
 
     output_notebook()
     
-    df = day_week_month_data(market, start_day, period)
-    
+    df = day_week_month_data(market, from_day, period)
+    df = df.set_index(df['Date'], drop=True)
+    df.rename(columns = {'Date' : 'Date1'}, inplace = True)  ##  Bokeh_Chart에서 Date index를사용하기위해 Colume명 Date를 Date1으로변경    
     mids = (df.Open + df.Close)/2
     spans = abs(df.Close-df.Open)
 
@@ -523,7 +548,6 @@ def make_dataset(name,date):
     return df1  
 
 class analysis:
-    source_dir = 'd:/stockdata/close_ma120/'
 
     df = all_stock_at('2020-08-03')
     df = df['Name']
@@ -597,14 +621,14 @@ class analysis:
         programtrend_df = str(programtrend_df['Date'])
         until_date = programtrend_df[10:15]
         until_date = until_date.replace('-','')
-        print(source_dir+'2021/'+'2021_02/'+until_date+'/')
+        print(path_close_ma120+'2021/'+'2021_02/'+until_date+'/')
 
         try:
-            os.mkdir(source_dir+'2021/'+'2021_02/'+until_date)
+            os.mkdir(path_close_ma120+'2021/'+'2021_02/'+until_date)
         except:
             pass
-        for filename in glob.glob(os.path.join(source_dir , '*.*')):
-            shutil.copy(filename, source_dir+'2021/'+'2021_02/'+until_date+'/')
+        for filename in glob.glob(os.path.join(path_close_ma120 , '*.*')):
+            shutil.copy(filename, path_close_ma120+'2021/'+'2021_02/'+until_date+'/')
         print('time:', time.time()-start)
 
             
@@ -618,22 +642,22 @@ class to_report:
             today = input("오늘날짜를 입력하세요 : sample: '2019-02-07'  ") or real_today
         
         else:
-            kpi200_df = pd.read_sql("select Date from market where Name='hrs' order by Date desc limit 2", engine)
-            yesterday = str(kpi200_df['Date'][1])
-            today = str(kpi200_df['Date'][0])
+            day_df = pd.read_sql("select Date from market where Name='삼성전자' order by Date desc limit 2", engine)
+            from_day = str(day_df['Date'][1])
+            to_day = str(day_df['Date'][0])
             
-        select_query = self.select_query
-        volume_query =self.volume_query
-    
-        var = select_query +"'"+yesterday+"'"+ volume_query
-        df = pd.read_sql(var ,engine)
+        df  =all_stock_period(from_day)
+        df = df[df['Volume'] >  500000]
+        df.reset_index(drop=True)
+        #display(df)
 
-        df1 = df[df['Date'].astype(str) == yesterday]
+        df1 = df[df['Date'].astype(str) == from_day]
         df1 = df1[['Name','Volume','Close']]
         df1.columns = ['Name','yester_Volume','yester_Close']
         #display(df1)
 
-        df2 = df[df['Date'].astype(str) == today]
+
+        df2 = df[df['Date'].astype(str) == to_day]
         df2 = df2[['Name','Volume','Close']]
         df2.columns = ['Name','today_Volume','today_Close']
         #display(df2)
@@ -645,16 +669,17 @@ class to_report:
         df4 = df3.sort_values(by=['Close','Volume'],ascending=False)
         df3 = df3.reset_index(drop=True)
 
-        df3 = df3[:50]
+        df3 = df3[:15]
         df4 = df4.reset_index(drop=True)
-        df4 = df4[:50]
-        df3 = df3.rename(columns={'today_Close':'Closed'})
-        df4 = df4.rename(columns={'today_Close':'Closed'})
-        df3.to_excel(path_volume+today+'.xlsx', encoding='utf-8')
-        df4.to_excel(path_price+today+'.xlsx', encoding='utf-8')        
+        df4 = df4[:15]
+        df3.to_excel(path_volume+to_day+'.xlsx', encoding='utf-8')
+        df4.to_excel(path_price+to_day+'.xlsx', encoding='utf-8')        
         display(df3)
-        display(df4)
+        display(df4)        
 
+        
+        
+        
     def get_graph(self, choice=1):
         graph_name_list=['stock','money', 'program','future']
         date='2019-01-01'
@@ -801,15 +826,13 @@ class to_report:
                 
         else :
             
-            bokeh_chart('kospi','2020-06-01','month')
-            bokeh_chart('kospi','2020-06-01','week')
-            df1 = select_market_period('kospi','2020-01-01')
-            market_ma(df1,'ma5','ma20')
-            bokeh_chart('kosdaq','2020-06-01','month')
-            bokeh_chart('kosdaq','2020-06-01','week')
-            df1 = select_market_period('kosdaq','2020-01-01')
-            market_ma(df1,'ma5','ma20')
-            
+            candle_graph(market='kospi', from_day = '2019-01-01', period='month' )
+            candle_graph(market='kospi', from_day = '2020-01-01', period='week' )
+            candle_graph(market='kospi', from_day = '2021-01-01', period='day' )
+            candle_graph(market='kosdaq', from_day = '2019-01-01', period='month' )
+            candle_graph(market='kosdaq', from_day = '2020-01-01', period='week' )
+            candle_graph(market='kosdaq', from_day = '2021-01-01', period='day' )            
+           
             for i in three_period:
                 depress(i)
             
